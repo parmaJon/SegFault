@@ -43,14 +43,25 @@ void delete(int pid) {
 }
 
 /**
- * Determines whether or not the queue is empty or not
+ * Determines whether or not the queue is empty
  * @return true if the queue is empty, false otherwise
  */
 bool isEmpty() {
     return false;
 }
 
-
+/**
+ * Determines whether or not the queue is full
+ * @return true if the queue is full, false otherwise
+ */
 bool isFull();
+
+/**
+ * Removes all items from the queue
+ */
 void clear();
+
+/**
+ * Displays the processes in the queue
+ */
 void listQueue();
