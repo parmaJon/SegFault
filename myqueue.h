@@ -24,6 +24,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+typedef int bool;
+#define TRUE 1;
+#define FALSE 0;
+
 typedef struct {
     int pid;
     int psw;

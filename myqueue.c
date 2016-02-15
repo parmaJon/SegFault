@@ -16,13 +16,17 @@
 
 #include "myqueue.h"
 
+int main(int argc, char argv[]) {
+    return 0;
+}
+
 /**
  * Inserts a process into the end of the queue
  * @param process the process being inserted
  * @return true if successful, false otherwise
  */
 bool enqueue(Process process) {
-    return false;
+    return FALSE;
 }
 
 /**
@@ -30,7 +34,8 @@ bool enqueue(Process process) {
  * @return the process removed, or NULL in error
  */
 Process dequeue() {
-    return NULL;
+    Process p;
+    return p;
 }
 
 /**
@@ -47,21 +52,27 @@ void delete(int pid) {
  * @return true if the queue is empty, false otherwise
  */
 bool isEmpty() {
-    return false;
+    return FALSE;
 }
 
 /**
  * Determines whether or not the queue is full
  * @return true if the queue is full, false otherwise
  */
-bool isFull();
+bool isFull() {
+    return FALSE;
+}
 
 /**
  * Removes all items from the queue
  */
-void clear();
+void clear() {
+    return;
+}
 
 /**
  * Displays the processes in the queue
  */
-void listQueue();
+void listQueue() {
+    return;
+}
