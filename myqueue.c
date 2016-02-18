@@ -15,6 +15,9 @@
 ******************************************************/
 
 #include "myqueue.h"
+//To aviod changes to method signatures, need globals
+Node *head, *tail;
+int length; //for convenience
 
 int main(int argc, char argv[]) {
     return 0;
@@ -26,7 +29,15 @@ int main(int argc, char argv[]) {
  * @return true if successful, false otherwise
  */
 bool enqueue(Process process) {
-    return FALSE;
+    if( isFull() )
+        return FALSE;
+    Node *new = malloc(sizeof(Node));
+    new->next = NULL;
+    new->prev = tail;
+    new->p = &process;
+    tail->next = new;
+    tail = new;
+    length++;
 }
 
 /**
@@ -35,6 +46,7 @@ bool enqueue(Process process) {
  */
 Process dequeue() {
     Process p;
+    length--;
     return p;
 }
 
@@ -44,6 +56,7 @@ Process dequeue() {
  * @param pid the pid of the process(es) to be deleted
  */
 void delete(int pid) {
+    length--;
     return;
 }
 
@@ -52,6 +65,10 @@ void delete(int pid) {
  * @return true if the queue is empty, false otherwise
  */
 bool isEmpty() {
+    if( head == NULL && length == 0 )
+        return TRUE;
+    if( head == NULL || length == 0 )
+        printf("QUEUE: ERROR: Head state and queue length inconsistent!");
     return FALSE;
 }
 
@@ -60,14 +77,18 @@ bool isEmpty() {
  * @return true if the queue is full, false otherwise
  */
 bool isFull() {
-    return FALSE;
+    if( length < MAX_PROCESSES )
+        return FALSE;
+    return TRUE;
 }
 
 /**
  * Removes all items from the queue
  */
 void clear() {
-    return;
+    head = NULL;
+    tail = NULL;
+    length = 0;
 }
 
 /**
