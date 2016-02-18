@@ -86,6 +86,16 @@ bool isFull() {
  * Removes all items from the queue
  */
 void clear() {
+    Node *trav = head;
+    Node *prev;
+
+    while( trav != NULL ) {
+        free(trav->p);
+        prev = trav;
+        trav = trav->next;
+        free(prev);
+    }
+
     head = NULL;
     tail = NULL;
     length = 0;
