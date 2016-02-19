@@ -28,20 +28,29 @@ Testing Results:
 coverage of error handling as well as proper functionality in specific edge cases. 
 Enqueue works well. All arguments are read and stored properly.  A single point of 
 interest involving the enqueue- tests were conducted with space for 2 registers 
-entered in the process (this constant can be changed in the header file).  When a 
-process is enqueued with more arguments than variable storage, the overflow is 
-ignored. When a process is enqueued with fewer args than storage, a default zero 
-value is used.  
+entered in the process (this constant can be changed in the header file).
+
+Implementation/Expected Behavior:
+When a process is enqueued with more arguments than variable storage, the overflow 
+is ignored. 
+When a process is enqueued without a register value specified, a default zero value 
+is used.  
 Using letters instead of integers for arguements when enqueueing also results in 
 interpreting those letters as zero and continues to enqueue the process.  
-The dequeue, successfully pops the process from the front of the queue, and the 
+The dequeue successfully pops the process from the front of the queue, and the 
 list() lists the PID of each process in the queue. 
 Enqueueing more than the defined limit throws an error.  This limit can also be 
-changed in the header file.  
+changed in the header file.
+Errors are also reported when attempting to perform delete/dequeue operations on 
+an empty queue.  
 The delete function successfully removes all processes sharing the specified pid 
 from anywhere in the stack.
+Finally, quit should clear the queue before termination.
+This program is not known to leak memory.
 
-any bugs: None known.  
+Bugs:
+None known  
 
+Additional Notes:
 Completed the isEmpty, isFull, and clear functions
 
