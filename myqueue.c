@@ -6,7 +6,7 @@
  * functions implementing the queue operations
  *
  * Group: SegFault
- * Authors: Lucas Stuyvesant
+ * Authors: Lucas Stuyvesant, Garrett Ransom, Jonathan Brandt, Travis Nordquist
  * Class: CSE 325
  * Instructor: Zheng
  * Assignment: Lab Project #2
@@ -44,10 +44,20 @@ bool enqueue(Process process) {
  * Removes a process from the front of the queue
  * @return the process removed, or NULL in error
  */
-Process dequeue() {
-    Process p;
+Process *dequeue() {
+    Process *dequ;
+    if(isEmpty() )
+	dequ = NULL;
+    else{
+	dequ = head->p;
+	head= head->next;
+
+	printf("Dequeued Process:\n Process ID: %d\n Program status: %d\n Pagetable Info:%d\n Register Array: %s\n", dequ->pid, dequ->psw, dequ->page_table, dequ->regs);
+
+    }
+
     length--;
-    return p;
+    return dequ;
 }
 
 /**
