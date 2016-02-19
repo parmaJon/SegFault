@@ -15,12 +15,85 @@
 ******************************************************/
 
 #include "myqueue.h"
-//To aviod changes to method signatures, need globals
-Node *head, *tail;
-int length; //for convenience
 
 int main(int argc, char argv[]) {
-    return 0;
+
+    int i = 0;
+    bool retFlag;
+    char *command;
+    char *input;
+    char buffer[100];
+    Process newProcess;
+    Process retProcess;
+    char *regStr;
+
+    while(1) {
+        printf("Enter a queue operation:\n > enqueue [pid] [psw] [page_table] [reg0] [reg1]...\n > dequeue\n > delete [pid]\n > list\n > quit\n > ");
+        scanf("%[^\n]%*c", buffer);
+        input = malloc(strlen(buffer) * sizeof(char));
+        strncpy(input, buffer, strlen(buffer));
+
+        command = strtok(input, " ");
+
+        if(strcmp(command,"enqueue") == 0) {
+
+            newProcess = malloc(sizeof(Process));
+            newProcess->pid = atoi(strtok(NULL, " "));
+            newProcess->psw = atoi(strtok(NULL, " "));
+            newProcess->page_table = atoi(strtok(NULL, " "));
+            for(i = 0, regStr = strtok(NULL, " "); regStr != NULL; i++, regStr = strtok(NULL, " ")) {
+
+                newProcess->regs[i] = atoi(regStr);
+            }
+
+            retFlag = enqueue(newProcess);
+
+            if(retFlag == FALSE) {
+                perror("Enqueue failed, queue is full\n");
+            }
+        }
+
+        else if(strcmp(command,"dequeue") == 0) {
+
+            retProcess = dequeue();
+
+            if(retProcess == NULL) {
+                perror("Dequeue Failed: Queue is empty\n");
+            }
+
+            else {
+                printf("PID: %i\nPSW: %i\nPage Table: %i\nRegs:",retProcess->pid,retProcess->psw,retProcess->page_table);
+                for(i = 0; i < NUM_REGS; i++) {
+                    printf(" %i",retProcess->regs[i]);
+                }
+                printf("\n");
+            }
+        }
+
+        else if(strcmp(command,"delete") == 0) {
+
+            i = atoi(strtok(NULL, " "));
+
+            delete(i);
+        }
+
+        else if(strcmp(command,"list") == 0) {
+
+            listQueue();
+        }
+
+        else if(strcmp(command,"quit") == 0) {
+            break;
+        }
+
+        else {
+            printf("Invalid Entry\n");
+        }
+
+        free(input);
+    }
+
+    return FALSE;
 }
 
 /**
@@ -29,35 +102,42 @@ int main(int argc, char argv[]) {
  * @return true if successful, false otherwise
  */
 bool enqueue(Process process) {
-    if( isFull() )
+
+    if( isFull() ) {
         return FALSE;
-    Node *new = malloc(sizeof(Node));
+    }
+
+    Node new = malloc(sizeof(Node));
     new->next = NULL;
-    new->prev = tail;
-    new->p = &process;
-    tail->next = new;
-    tail = new;
-    length++;
+    new->prev = myqueue.tail;
+    new->p = process;
+
+    if( isEmpty() ) {
+        myqueue.head = new;
+        myqueue.tail = new;
+    }
+
+    else {
+        myqueue.tail->next = new;
+        myqueue.tail = new;
+    }
+
+    myqueue.size++;
 }
 
 /**
  * Removes a process from the front of the queue
  * @return the process removed, or NULL in error
  */
-Process *dequeue() {
-    Process *dequ;
-    if(isEmpty() )
-	dequ = NULL;
-    else{
-	dequ = head->p;
-	head= head->next;
-
-	printf("Dequeued Process:\n Process ID: %d\n Program status: %d\n Pagetable Info:%d\n Register Array: %s\n", dequ->pid, dequ->psw, dequ->page_table, dequ->regs);
-
+Process dequeue() {
+    if( isEmpty() ) {
+        return NULL;
     }
 
-    length--;
-    return dequ;
+    Process p = myqueue.head->p;
+    myqueue.head = myqueue.head->next;
+    myqueue.size--;
+    return p;
 }
 
 /**
@@ -66,8 +146,79 @@ Process *dequeue() {
  * @param pid the pid of the process(es) to be deleted
  */
 void delete(int pid) {
-    length--;
-    return;
+    Node prev, cur, next;
+
+    if( isEmpty() ) {
+        perror("Delete Failed: Queue is empty\n");
+    }
+
+    if(myqueue.size == 1) {
+        if(myqueue.head->p->pid == pid) {
+            free(myqueue.head);
+            myqueue.head = NULL;
+            myqueue.tail = NULL;
+            myqueue.size--;
+        }
+
+        else {
+            perror("Delete Failed: PID not found\n");
+        }
+        return;
+    }
+
+    else if(myqueue.size == 2) {
+
+        if(myqueue.head->p->pid == pid) {
+            free(myqueue.head);
+            myqueue.head = myqueue.tail;
+            myqueue.head->prev = NULL;
+            myqueue.size--;
+        }
+
+        else if(myqueue.tail->p->pid == pid) {
+            free(myqueue.tail);
+            myqueue.tail = myqueue.head;
+            myqueue.head->next = NULL;
+            myqueue.size--;
+        }
+
+        else {
+            perror("Delete Failed: PID not found\n");
+        }
+        return;
+    }
+
+    else {
+
+        prev = myqueue.head;
+        cur = prev->next;
+        next = cur->next;
+
+        if(prev->p->pid == pid) {
+            free(prev);
+            myqueue.head = cur;
+            cur->prev = NULL;
+            myqueue.size--;
+        }
+
+        for(; next != NULL; prev = cur, cur = next, next = cur->next) {
+
+            if(cur->p->pid == pid) {
+                free(cur);
+                prev->next = next;
+                next->prev = prev;
+                myqueue.size--;
+            }
+        }
+
+        if(cur->p->pid == pid) {
+            free(cur);
+            prev->next = next;
+            myqueue.size--;
+        }
+
+        return;
+    }
 }
 
 /**
@@ -75,9 +226,9 @@ void delete(int pid) {
  * @return true if the queue is empty, false otherwise
  */
 bool isEmpty() {
-    if( head == NULL && length == 0 )
+    if( myqueue.head == NULL && myqueue.size == 0 )
         return TRUE;
-    if( head == NULL || length == 0 )
+    if( myqueue.head == NULL || myqueue.size == 0 )
         printf("QUEUE: ERROR: Head state and queue length inconsistent!");
     return FALSE;
 }
@@ -87,7 +238,7 @@ bool isEmpty() {
  * @return true if the queue is full, false otherwise
  */
 bool isFull() {
-    if( length < MAX_PROCESSES )
+    if( myqueue.size < MAX_PROCESSES )
         return FALSE;
     return TRUE;
 }
@@ -96,8 +247,8 @@ bool isFull() {
  * Removes all items from the queue
  */
 void clear() {
-    Node *trav = head;
-    Node *prev;
+    Node trav = myqueue.head;
+    Node prev;
 
     while( trav != NULL ) {
         free(trav->p);
@@ -106,9 +257,9 @@ void clear() {
         free(prev);
     }
 
-    head = NULL;
-    tail = NULL;
-    length = 0;
+    myqueue.head = NULL;
+    myqueue.tail = NULL;
+    myqueue.size = 0;
 }
 
 /**

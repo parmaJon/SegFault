@@ -23,29 +23,32 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
-typedef int bool;
-#define TRUE 1;
-#define FALSE 0;
+typedef enum {FALSE = 0, TRUE}  bool;
+//#define TRUE 1;
+//#define FALSE 0;
 
 typedef struct {
     int pid;
     int psw;
     int page_table;
     int regs[NUM_REGS];
-} Process;
+} *Process;
 
 typedef struct node{
     struct node *prev;
     struct node *next;
-    Process *p;
-} Node;
+    Process p;
+} *Node;
 
 typedef struct {
     int size;
-    Node *head;
-    Node *tail;
+    Node head;
+    Node tail;
 } Queue;
+
+Queue myqueue;
 
 bool enqueue(Process process);
 Process *dequeue();
