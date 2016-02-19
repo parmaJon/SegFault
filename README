@@ -14,9 +14,13 @@
 
 	The goal of this lab was to creat a process queue. We used a simple UI that works with the terminal. We then needed to enque, deque, delete and list the contents of the queue. 
 
-We used a doubly linked list to implement the queue.
+We used a doubly linked list to implement the queue.  Each node contained a next and prev pointer, as well as a pointer to the process it represented.  The Process was a struct containing a Process ID, pws, a page-table, and an array to represent its assigned registers.
 We move data via pointers. Adding data involves a malloc and 	removing data involves a free.
-//Testing results
-//any bugs?
+
+Testing results:
+   Testing involved multiple developers implementing use cases to test thorough coverage of error handling as well as proper functionality. Enqueue works well. All arguments are read and stored properly.  A single point of interest involving the enqueue- tests were conducted with space for 2 registers entered in the process (this constant can be changed in the header file).  When a process is enqueued with more arguments than variable storage, the overflow is taken as a new input in the op entry interface, returning an "invalid input" error after storing the first x inputs which contain storage (the first 5 arguments in testing cases). Using letters instead of integers for arguements when enqueueing results in replacing those letters with 0 and continues to enqueue the process.  The dequeue, successfully pops the process from the front of the queue, and the list() lists the PID of each process in the queue. Enqueueing more than the defined limit throws an error.  This limit can also be changed in the header file.  The delete function successfully removes a single process from anywhere in the stack. However, when multiple processes share a PID, the code runs into an error and the program crashes.
+
+any bugs: Deleting a PID shared by multiple processes results in complete program crash, with a "double free" error thrown by the shell.  This is resultant of the program attempting to free allocated memory twice, due to the same PID.  
+
 Completed the isEmpty, isFull, and clear functions
 
