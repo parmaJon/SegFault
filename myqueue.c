@@ -14,6 +14,7 @@
  * Due: Feb. 19, 2016
 ******************************************************/
 
+#define DEBUG
 #include "myqueue.h"
 
 int main(int argc, char argv[]) {
@@ -83,6 +84,7 @@ int main(int argc, char argv[]) {
         }
 
         else if(strcmp(command,"quit") == 0) {
+            clear();
             break;
         }
 
@@ -148,16 +150,18 @@ Process dequeue() {
 void delete(int pid) {
     Node prev, cur, next;
 
+    #ifdef DEBUG
+    printf("DEBUG: Deleting pid = %d\n",pid);
+    #endif
+
     if( isEmpty() ) {
         perror("Delete Failed: Queue is empty\n");
+        return;
     }
 
     if(myqueue.size == 1) {
         if(myqueue.head->p->pid == pid) {
-            free(myqueue.head);
-            myqueue.head = NULL;
-            myqueue.tail = NULL;
-            myqueue.size--;
+            clear();
         }
 
         else {
@@ -190,14 +194,14 @@ void delete(int pid) {
 
     else {
 
-        prev = myqueue.head;
-        cur = prev->next;
+        prev = NULL;
+        cur = myqueue.head;
         next = cur->next;
 
-        if(prev->p->pid == pid) {
-            free(prev);
-            myqueue.head = cur;
-            cur->prev = NULL;
+        if(cur->p->pid == pid) {
+            free(cur);
+            myqueue.head = next;
+            next->prev = NULL;
             myqueue.size--;
         }
 
@@ -213,7 +217,7 @@ void delete(int pid) {
 
         if(cur->p->pid == pid) {
             free(cur);
-            prev->next = next;
+            prev->next = NULL;
             myqueue.size--;
         }
 
