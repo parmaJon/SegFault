@@ -14,7 +14,7 @@
  * Due: Feb. 19, 2016
 ******************************************************/
 
-#define DEBUG
+//#define DEBUG
 #include "myqueue.h"
 
 int main(int argc, char argv[]) {
@@ -29,9 +29,11 @@ int main(int argc, char argv[]) {
     char *regStr;
     char *tmp;
 
+    /* Loop to perform commands */
     while(1) {
-        printf("Enter a queue operation:\n > enqueue [pid] [psw] [page_table] [reg0] [reg1]...\n > dequeue\n > delete [pid]\n > list\n > quit\n > ");
+        printf("Enter a queue operation:\n  - enqueue [pid] [psw] [page_table] [reg0] [reg1]...\n  - dequeue\n  - delete [pid]\n  - list\n  - quit\n > ");
         //scanf("%[^\n]%*c", buffer);
+        /* Read user input into the buffer */
         for (i = 0; i < 100; i++) { 
             buffer[i] = fgetc(stdin);
             if( buffer[i] == '\n' ) {
@@ -54,6 +56,7 @@ int main(int argc, char argv[]) {
         printf("DEBUG: Copied command string = %s\n", input);
         #endif
 
+        /* Perform analysis on copy of the input */
         command = strtok(input, " ");
 
         if(strcmp(command,"enqueue") == 0) {
@@ -64,25 +67,33 @@ int main(int argc, char argv[]) {
             #ifdef DEBUG
             printf("DEBUG: Interface commanded to enqueue pid = %s\n  psw = %s\n  pt = %s\n",tmp,psw,pt);
             #endif
+ 
+            /* Ensure that all args for enqueue were properly entered */
             if( !tmp  ||  !psw  ||  !pt ) {
                 errno = EINVAL;
                 perror("Error: Specify pid, psw, and page_table (at minimum) for enqueue");
                 retFlag = FALSE;
             }
-            else {
+            else { //create and enqueue the new process
                 newProcess = malloc(sizeof(struct process));
                 newProcess->pid = atoi(tmp);
                 newProcess->psw = atoi(psw);
                 newProcess->page_table = atoi(pt);
-                for(i = 0, regStr = strtok(NULL, " "); regStr != NULL  &&  i < NUM_REGS; i++, regStr = strtok(NULL, " ")) {
+                for(i = 0, regStr = strtok(NULL, " "); i < NUM_REGS; i++, regStr = strtok(NULL, " ")) {
                     #ifdef DEBUG
                     printf("  reg%d = %s\n",i,regStr);
                     #endif
-                    newProcess->regs[i] = atoi(regStr);
+                    if( regStr != NULL ) {
+                        newProcess->regs[i] = atoi(regStr);
+                    }
+                    else { //register values default to zero
+                        newProcess->regs[i] = 0;
+                    }
                 }
                 retFlag = enqueue(newProcess);
             }
 
+            /* Identify return status to user, just in case */
             if(retFlag == FALSE) {
                 perror("Enqueue failed");
             }
@@ -95,17 +106,20 @@ int main(int argc, char argv[]) {
 
             retProcess = dequeue();
 
+            /* If dequeue failed, queue was empty */
             if(retProcess == NULL) {
                 errno = EPERM;
                 perror("Dequeue Failed: Queue is empty");
             }
-
+            /* Otherwise, print process elements */
             else {
                 printf("PID: %i\nPSW: %i\nPage Table: %i\nRegs:",retProcess->pid,retProcess->psw,retProcess->page_table);
                 for(i = 0; i < NUM_REGS; i++) {
                     printf(" %i",retProcess->regs[i]);
                 }
                 printf("\n");
+
+                free(retProcess);
             }
         }
 
@@ -114,11 +128,13 @@ int main(int argc, char argv[]) {
             #ifdef DEBUG
             printf("DEBUG: Interface commanded to delete pid = %s\n",tmp);
             #endif
+
+            /* Check that pid was specified */
             if( !tmp ) {
                 errno = EINVAL;
                 perror("Error: Specify pid to delete");
             }
-            else {
+            else {  //if so, execute the delete op
                 i = atoi(tmp);
                 delete(i);
             }
@@ -135,12 +151,14 @@ int main(int argc, char argv[]) {
             #ifdef DEBUG
             printf("DEBUG: Interface commanded to quit\n");
             #endif
+
+            /* Before quitting, free memeory */
             clear();
             free(input);
             break;
         }
 
-        else {
+        else { //if command not recognized
             printf("Invalid Entry\n");
         }
 
@@ -168,11 +186,12 @@ bool enqueue(Process process) {
     new->prev = myqueue.tail;
     new->p = process;
 
+    /* Edge case for empty queue */
     if( isEmpty() ) {
         myqueue.head = new;
         myqueue.tail = new;
     }
-
+    /* Otherwise, just insert at end */
     else {
         myqueue.tail->next = new;
         myqueue.tail = new;
@@ -192,7 +211,19 @@ Process dequeue() {
     }
 
     Process p = myqueue.head->p;
-    myqueue.head = myqueue.head->next;
+
+    /* Edge case for single element queue */
+    if( myqueue.head->next == NULL ) {
+        free(myqueue.head);
+        myqueue.head = NULL;
+        myqueue.tail = NULL;
+    }
+    else {
+        myqueue.head = myqueue.head->next;
+        free(myqueue.head->prev);
+        myqueue.head->prev = NULL;
+    }
+
     myqueue.size--;
     return p;
 }
