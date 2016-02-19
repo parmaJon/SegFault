@@ -24,9 +24,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef int bool;
-#define TRUE 1;
-#define FALSE 0;
+typedef enum {FALSE = 0, TRUE}  bool;
+//#define TRUE 1;
+//#define FALSE 0;
 
 typedef struct {
     int pid;
@@ -46,6 +46,8 @@ typedef struct {
     Node *head;
     Node *tail;
 } Queue;
+
+Queue myqueue;
 
 bool enqueue(Process process);
 Process dequeue();

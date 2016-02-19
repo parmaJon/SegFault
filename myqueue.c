@@ -16,11 +16,74 @@
 
 #include "myqueue.h"
 //To aviod changes to method signatures, need globals
+//Yes, but wrong global and wrong place, see .h file queue
 Node *head, *tail;
 int length; //for convenience
 
 int main(int argc, char argv[]) {
-    return 0;
+
+    int i = 0;
+    bool retFlag;
+    char *command;
+    char *input;
+    Process newProcess;
+    char *regStr;
+    while(1) {
+
+        scanf("%[^\n]%*c",&input);
+        if(strcmp((command = strtok(input, " ")),"enqueue") == 0) {
+
+            printf("Enqueue Reached\n");
+            newProcess.pid = atoi(strtok(NULL, " "));
+            newProcess.psw = atoi(strtok(NULL, " "));
+            newProcess.page_table = atoi(strtok(NULL, " "));
+            for(i = 0, regStr = strtok(NULL, " "); regStr != NULL; i++, regStr = strtok(NULL, " ")) {
+
+                newProcess.regs[i] = atoi(regStr);
+            }
+
+            retFlag = enqueue(newProcess);
+
+            if(retFlag == FALSE) {
+                printf("Enqueue failed, queue is full\n");
+            }
+        }
+
+        else if(strcmp(command,"dequeue") == 0) {
+
+            printf("Dequeue Reached\n");
+            newProcess = dequeue();
+            printf("PID: %i\nPSW: %i\nPage Table: %i\nRegs:",newProcess.pid,newProcess.psw,newProcess.page_table);
+            for(i = 0; i < NUM_REGS; i++) {
+                printf(" %i",newProcess.regs[i]);
+            }
+            printf("\n");
+        }
+
+        else if(strcmp(command,"delete") == 0) {
+
+            printf("Delete Reached\n");
+            i = atoi(strtok(NULL, " "));
+
+            delete(i);
+        }
+
+        else if(strcmp(command,"list") == 0) {
+
+            printf("List Reached\n");
+            listQueue();
+        }
+
+        else if(strcmp(command,"quit") == 0) {
+            break;
+        }
+
+        else {
+            printf("Invalid Entry\n");
+        }
+    }
+
+    return FALSE;
 }
 
 /**
