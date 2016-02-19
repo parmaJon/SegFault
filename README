@@ -1,1 +1,22 @@
-this is our README. Populate it later
+/******************************************************
+ * Filename: ReadMe
+ *
+ * Description: documentation for project
+ *
+ * Group: SegFault
+ * Authors: Lucas Stuyvesant, Garrett Ransom, Jonathan Brandt, Travis Nordquist
+ * Class: CSE 325
+ * Instructor: Zheng
+ * Assignment: Lab Project #2
+ * Assigned: Feb. 5, 2016
+ * Due: Feb. 19, 2016
+******************************************************/
+
+	The goal of this lab was to creat a process queue. We used a simple UI that works with the terminal. We then needed to enque, deque, delete and list the contents of the queue. 
+
+We used a doubly linked list to implement the queue.
+We move data via pointers. Adding data involves a malloc and 	removing data involves a free.
+//Testing results
+//any bugs?
+Completed the isEmpty, isFull, and clear functions
+

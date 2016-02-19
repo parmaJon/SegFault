@@ -115,5 +115,16 @@ void clear() {
  * Displays the processes in the queue
  */
 void listQueue() {
+    Node *trav = head;
+    
+    if(trav == NULL){
+        printf("queue is empty.\n");
+        return;
+    }
+    while(trav -> next != NULL){
+        printf("%d, ", trav -> p -> pid);
+        trav = trav -> next;
+    }
+    printf("%d.\n", trav -> p -> pid);
     return;
 }
