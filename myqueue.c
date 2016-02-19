@@ -266,7 +266,7 @@ void clear() {
  * Displays the processes in the queue
  */
 void listQueue() {
-    Node *trav = head;
+    Node trav = myqueue.head;
     
     if(trav == NULL){
         printf("queue is empty.\n");
