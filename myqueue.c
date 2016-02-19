@@ -47,8 +47,8 @@ int main(int argc, char argv[]) {
         #endif
 
 
-        input = malloc(strlen(buffer) * sizeof(char));
-        strncpy(input, buffer, strlen(buffer)+1);
+        input = malloc((strlen(buffer)+1) * sizeof(char));
+        memcpy(input, buffer, strlen(buffer)+1);
 
         #ifdef DEBUG
         printf("DEBUG: Copied command string = %s\n", input);
