@@ -58,7 +58,7 @@ int main(int argc, char argv[]) {
 
         if(strcmp(command,"enqueue") == 0) {
 
-            newProcess = malloc(sizeof(Process));
+            newProcess = malloc(sizeof(struct process));
 
             tmp = strtok(NULL, " ");
             char *psw = strtok(NULL, " ");
@@ -67,7 +67,8 @@ int main(int argc, char argv[]) {
             printf("DEBUG: Interface commanded to enqueue pid = %s\n  psw = %s\n  pt = %s\n",tmp,psw,pt);
             #endif
             if( !tmp  ||  !psw  ||  !pt ) {
-                printf("Error: Specify pid, psw, and page_table (at minimum) for enqueue\n");
+                perror("Error: Specify pid, psw, and page_table (at minimum) for enqueue\n");
+                retFlag = FALSE;
             }
             else {
                 newProcess->pid = atoi(tmp);
@@ -79,11 +80,11 @@ int main(int argc, char argv[]) {
                     #endif
                     newProcess->regs[i] = atoi(regStr);
                 }
+                retFlag = enqueue(newProcess);
             }
-            retFlag = enqueue(newProcess);
 
             if(retFlag == FALSE) {
-                perror("Enqueue failed, queue is full\n");
+                perror("Enqueue failed\n");
             }
             else {
                 printf("Process queued\n");
@@ -133,6 +134,7 @@ int main(int argc, char argv[]) {
             printf("DEBUG: Interface commanded to quit\n");
             #endif
             clear();
+            free(input);
             break;
         }
 
@@ -154,10 +156,11 @@ int main(int argc, char argv[]) {
 bool enqueue(Process process) {
 
     if( isFull() ) {
+        printf("Enqueue error - queue is full");
         return FALSE;
     }
 
-    Node new = malloc(sizeof(Node));
+    Node new = malloc(sizeof(struct node));
     new->next = NULL;
     new->prev = myqueue.tail;
     new->p = process;
@@ -173,6 +176,7 @@ bool enqueue(Process process) {
     }
 
     myqueue.size++;
+    return TRUE;
 }
 
 /**

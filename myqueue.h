@@ -29,7 +29,7 @@ typedef enum {FALSE = 0, TRUE}  bool;
 //#define TRUE 1;
 //#define FALSE 0;
 
-typedef struct {
+typedef struct process{
     int pid;
     int psw;
     int page_table;
