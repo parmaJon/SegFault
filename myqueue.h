@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 typedef enum {FALSE = 0, TRUE}  bool;
 //#define TRUE 1;
@@ -33,18 +34,18 @@ typedef struct {
     int psw;
     int page_table;
     int regs[NUM_REGS];
-} Process;
+} *Process;
 
 typedef struct node{
     struct node *prev;
     struct node *next;
-    Process *p;
-} Node;
+    Process p;
+} *Node;
 
 typedef struct {
     int size;
-    Node *head;
-    Node *tail;
+    Node head;
+    Node tail;
 } Queue;
 
 Queue myqueue;
