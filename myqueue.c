@@ -72,10 +72,17 @@ int main(int argc, char argv[]) {
         }
 
         else if(strcmp(command,"delete") == 0) {
-
-            i = atoi(strtok(NULL, " "));
-
-            delete(i);
+            char *tmp = strtok(NULL, " ");
+            #ifdef DEBUG
+            printf("DEBUG: Interface commanded to delete pid = %s\n",tmp);
+            #endif
+            if( !tmp ) {
+                printf("Error: Specify pid to delete\n");
+            }
+            else {
+                i = atoi(tmp);
+                delete(i);
+            }
         }
 
         else if(strcmp(command,"list") == 0) {
