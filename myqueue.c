@@ -31,7 +31,7 @@ int main(int argc, char argv[]) {
 
     /* Loop to perform commands */
     while(1) {
-        printf("Enter a queue operation:\n  - enqueue [pid] [psw] [page_table] [reg0] [reg1]...\n  - dequeue\n  - delete [pid]\n  - list\n  - quit\n > ");
+        printf("\nEnter a queue operation:\n  - enqueue [pid] [psw] [page_table] [reg0] [reg1]...\n  - dequeue\n  - delete [pid]\n  - list\n  - quit\n > ");
         //scanf("%[^\n]%*c", buffer);
         /* Read user input into the buffer */
         for (i = 0; i < 100; i++) { 
@@ -113,7 +113,7 @@ int main(int argc, char argv[]) {
             }
             /* Otherwise, print process elements */
             else {
-                printf("PID: %i\nPSW: %i\nPage Table: %i\nRegs:",retProcess->pid,retProcess->psw,retProcess->page_table);
+                printf("\nPID: %i\nPSW: %i\nPage Table: %i\nRegs:",retProcess->pid,retProcess->psw,retProcess->page_table);
                 for(i = 0; i < NUM_REGS; i++) {
                     printf(" %i",retProcess->regs[i]);
                 }
@@ -235,6 +235,8 @@ Process dequeue() {
  */
 void delete(int pid) {
     Node prev, cur, next;
+    Process proc;
+    int i;
 
     #ifdef DEBUG
     printf("DEBUG: Deleting pid = %d\n",pid);
@@ -246,70 +248,73 @@ void delete(int pid) {
         return;
     }
 
+    /* Edge case for single element queue */
     if(myqueue.size == 1) {
         if(myqueue.head->p->pid == pid) {
-            clear();
+            proc = dequeue();
+            printf("\nPID: %i\nPSW: %i\nPage Table: %i\nRegs:",proc->pid,proc->psw,proc->page_table);
+            for(i = 0; i < NUM_REGS; i++) {
+                printf(" %i",proc->regs[i]);
+            }
+            printf("\n");
+            free(proc);
         }
-
         else {
             errno = EINVAL;
             perror("Delete Failed: PID not found");
         }
         return;
     }
-
-    else if(myqueue.size == 2) {
-
-        if(myqueue.head->p->pid == pid) {
-            free(myqueue.head);
-            myqueue.head = myqueue.tail;
-            myqueue.head->prev = NULL;
-            myqueue.size--;
-        }
-
-        else if(myqueue.tail->p->pid == pid) {
-            free(myqueue.tail);
-            myqueue.tail = myqueue.head;
-            myqueue.head->next = NULL;
-            myqueue.size--;
-        }
-
-        else {
-            errno = EINVAL;
-            perror("Delete Failed: PID not found");
-        }
-        return;
-    }
-
     else {
 
         prev = NULL;
         cur = myqueue.head;
         next = cur->next;
 
-        if(cur->p->pid == pid) {
-            free(cur);
-            myqueue.head = next;
-            next->prev = NULL;
-            myqueue.size--;
-        }
-
+        /* Loop through list, deleting any matching processes */
         for(; next != NULL; prev = cur, cur = next, next = cur->next) {
 
             if(cur->p->pid == pid) {
-                free(cur->p);
+                /* Special case for head of queue */
+                if( myqueue.head == cur )
+                    myqueue.head = next;
+
+                proc = cur->p;
+                printf("\nPID: %i\nPSW: %i\nPage Table: %i\nRegs:",proc->pid,proc->psw,proc->page_table);
+                for(i = 0; i < NUM_REGS; i++) {
+                    printf(" %i",proc->regs[i]);
+                }
+                printf("\n");
+                free(proc);
                 free(cur);
-                prev->next = next;
+
+                if( prev ) //check that prev is not NULL
+                    prev->next = next;
+
                 next->prev = prev;
                 myqueue.size--;
-                cur = prev;
+                cur = prev; //set cur to prev so that prev will remain unchanged in next iteration
             }
         }
 
+        /* Tail element is a match, delete that as well */
         if( cur != NULL  &&  cur->p->pid == pid) {
-            free(cur->p);
+            /* Special case for head of queue */
+            if( myqueue.head == cur )
+                myqueue.head = next;
+
+            proc = cur->p;
+            printf("\nPID: %i\nPSW: %i\nPage Table: %i\nRegs:",proc->pid,proc->psw,proc->page_table);
+            for(i = 0; i < NUM_REGS; i++) {
+                printf(" %i",proc->regs[i]);
+            }
+            printf("\n");
+            myqueue.tail = prev;
+            free(proc);
             free(cur);
-            prev->next = NULL;
+
+            if( prev )
+                prev->next = NULL;
             myqueue.size--;
         }
 
