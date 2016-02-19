@@ -14,7 +14,7 @@
  * Due: Feb. 19, 2016
 ******************************************************/
 
-//#define DEBUG
+#define DEBUG
 #include "myqueue.h"
 
 int main(int argc, char argv[]) {
@@ -266,14 +266,17 @@ void delete(int pid) {
         for(; next != NULL; prev = cur, cur = next, next = cur->next) {
 
             if(cur->p->pid == pid) {
+                free(cur->p);
                 free(cur);
                 prev->next = next;
                 next->prev = prev;
                 myqueue.size--;
+                cur = prev;
             }
         }
 
-        if(cur->p->pid == pid) {
+        if( cur != NULL  &&  cur->p->pid == pid) {
+            free(cur->p);
             free(cur);
             prev->next = NULL;
             myqueue.size--;
