@@ -14,7 +14,7 @@
  * Due: Feb. 19, 2016
 ******************************************************/
 
-#define DEBUG
+//#define DEBUG
 #include "myqueue.h"
 
 int main(int argc, char argv[]) {
@@ -58,8 +58,6 @@ int main(int argc, char argv[]) {
 
         if(strcmp(command,"enqueue") == 0) {
 
-            newProcess = malloc(sizeof(struct process));
-
             tmp = strtok(NULL, " ");
             char *psw = strtok(NULL, " ");
             char *pt = strtok(NULL, " ");
@@ -67,10 +65,12 @@ int main(int argc, char argv[]) {
             printf("DEBUG: Interface commanded to enqueue pid = %s\n  psw = %s\n  pt = %s\n",tmp,psw,pt);
             #endif
             if( !tmp  ||  !psw  ||  !pt ) {
-                perror("Error: Specify pid, psw, and page_table (at minimum) for enqueue\n");
+                errno = EINVAL;
+                perror("Error: Specify pid, psw, and page_table (at minimum) for enqueue");
                 retFlag = FALSE;
             }
             else {
+                newProcess = malloc(sizeof(struct process));
                 newProcess->pid = atoi(tmp);
                 newProcess->psw = atoi(psw);
                 newProcess->page_table = atoi(pt);
@@ -84,7 +84,7 @@ int main(int argc, char argv[]) {
             }
 
             if(retFlag == FALSE) {
-                perror("Enqueue failed\n");
+                perror("Enqueue failed");
             }
             else {
                 printf("Process queued\n");
@@ -96,7 +96,8 @@ int main(int argc, char argv[]) {
             retProcess = dequeue();
 
             if(retProcess == NULL) {
-                perror("Dequeue Failed: Queue is empty\n");
+                errno = EPERM;
+                perror("Dequeue Failed: Queue is empty");
             }
 
             else {
@@ -114,7 +115,8 @@ int main(int argc, char argv[]) {
             printf("DEBUG: Interface commanded to delete pid = %s\n",tmp);
             #endif
             if( !tmp ) {
-                printf("Error: Specify pid to delete\n");
+                errno = EINVAL;
+                perror("Error: Specify pid to delete");
             }
             else {
                 i = atoi(tmp);
@@ -142,6 +144,7 @@ int main(int argc, char argv[]) {
             printf("Invalid Entry\n");
         }
 
+        errno = 0;
         free(input);
     }
 
@@ -207,7 +210,8 @@ void delete(int pid) {
     #endif
 
     if( isEmpty() ) {
-        perror("Delete Failed: Queue is empty\n");
+        errno = EPERM;
+        perror("Delete Failed: Queue is empty");
         return;
     }
 
@@ -217,7 +221,8 @@ void delete(int pid) {
         }
 
         else {
-            perror("Delete Failed: PID not found\n");
+            errno = EINVAL;
+            perror("Delete Failed: PID not found");
         }
         return;
     }
@@ -239,7 +244,8 @@ void delete(int pid) {
         }
 
         else {
-            perror("Delete Failed: PID not found\n");
+            errno = EINVAL;
+            perror("Delete Failed: PID not found");
         }
         return;
     }
