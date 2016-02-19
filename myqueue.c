@@ -23,16 +23,35 @@ int main(int argc, char argv[]) {
     bool retFlag;
     char *command;
     char *input;
-    char buffer[100];
+    char buffer[100] = {0};
     Process newProcess;
     Process retProcess;
     char *regStr;
 
     while(1) {
         printf("Enter a queue operation:\n > enqueue [pid] [psw] [page_table] [reg0] [reg1]...\n > dequeue\n > delete [pid]\n > list\n > quit\n > ");
-        scanf("%[^\n]%*c", buffer);
+        //scanf("%[^\n]%*c", buffer);
+        for (i = 0; i < 100; i++) { 
+            buffer[i] = fgetc(stdin);
+            if( buffer[i] == '\n' ) {
+                buffer[i] = 0;
+                break;
+            }
+        }
+        if( buffer[99] != 0 ) //if input too long, append null
+            buffer[99] = 0;
+
+        #ifdef DEBUG
+        printf("DEBUG: Interface recieved = %s\n", buffer);
+        #endif
+
+
         input = malloc(strlen(buffer) * sizeof(char));
-        strncpy(input, buffer, strlen(buffer));
+        strncpy(input, buffer, strlen(buffer)+1);
+
+        #ifdef DEBUG
+        printf("DEBUG: Copied command string = %s\n", input);
+        #endif
 
         command = strtok(input, " ");
 
@@ -86,11 +105,16 @@ int main(int argc, char argv[]) {
         }
 
         else if(strcmp(command,"list") == 0) {
-
+            #ifdef DEBUG
+            printf("DEBUG: Interface commanded to list queue contents\n");
+            #endif
             listQueue();
         }
 
         else if(strcmp(command,"quit") == 0) {
+            #ifdef DEBUG
+            printf("DEBUG: Interface commanded to quit\n");
+            #endif
             clear();
             break;
         }
