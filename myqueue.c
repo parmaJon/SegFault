@@ -6,7 +6,7 @@
  * functions implementing the queue operations
  *
  * Group: SegFault
- * Authors: Lucas Stuyvesant
+ * Authors: Lucas Stuyvesant, Garrett Ransom, Jonathan Brandt, Travis Nordquist
  * Class: CSE 325
  * Instructor: Zheng
  * Assignment: Lab Project #2

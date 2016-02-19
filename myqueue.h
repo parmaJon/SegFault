@@ -51,7 +51,7 @@ typedef struct {
 Queue myqueue;
 
 bool enqueue(Process process);
-Process dequeue();
+Process *dequeue();
 void delete(int pid);
 bool isEmpty();
 bool isFull();
