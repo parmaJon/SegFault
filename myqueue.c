@@ -27,6 +27,7 @@ int main(int argc, char argv[]) {
     Process newProcess;
     Process retProcess;
     char *regStr;
+    char *tmp;
 
     while(1) {
         printf("Enter a queue operation:\n > enqueue [pid] [psw] [page_table] [reg0] [reg1]...\n > dequeue\n > delete [pid]\n > list\n > quit\n > ");
@@ -58,18 +59,34 @@ int main(int argc, char argv[]) {
         if(strcmp(command,"enqueue") == 0) {
 
             newProcess = malloc(sizeof(Process));
-            newProcess->pid = atoi(strtok(NULL, " "));
-            newProcess->psw = atoi(strtok(NULL, " "));
-            newProcess->page_table = atoi(strtok(NULL, " "));
-            for(i = 0, regStr = strtok(NULL, " "); regStr != NULL; i++, regStr = strtok(NULL, " ")) {
 
-                newProcess->regs[i] = atoi(regStr);
+            tmp = strtok(NULL, " ");
+            char *psw = strtok(NULL, " ");
+            char *pt = strtok(NULL, " ");
+            #ifdef DEBUG
+            printf("DEBUG: Interface commanded to enqueue pid = %s\n  psw = %s\n  pt = %s\n",tmp,psw,pt);
+            #endif
+            if( !tmp  ||  !psw  ||  !pt ) {
+                printf("Error: Specify pid, psw, and page_table (at minimum) for enqueue\n");
             }
-
+            else {
+                newProcess->pid = atoi(tmp);
+                newProcess->psw = atoi(psw);
+                newProcess->page_table = atoi(pt);
+                for(i = 0, regStr = strtok(NULL, " "); regStr != NULL  &&  i < NUM_REGS; i++, regStr = strtok(NULL, " ")) {
+                    #ifdef DEBUG
+                    printf("  reg%d = %s\n",i,regStr);
+                    #endif
+                    newProcess->regs[i] = atoi(regStr);
+                }
+            }
             retFlag = enqueue(newProcess);
 
             if(retFlag == FALSE) {
                 perror("Enqueue failed, queue is full\n");
+            }
+            else {
+                printf("Process queued\n");
             }
         }
 
@@ -91,7 +108,7 @@ int main(int argc, char argv[]) {
         }
 
         else if(strcmp(command,"delete") == 0) {
-            char *tmp = strtok(NULL, " ");
+            tmp = strtok(NULL, " ");
             #ifdef DEBUG
             printf("DEBUG: Interface commanded to delete pid = %s\n",tmp);
             #endif
