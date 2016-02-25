@@ -39,7 +39,7 @@ typedef struct process{
 typedef struct node{
     struct node *prev;
     struct node *next;
-    Process p;
+    int i;
 } *Node;
 
 typedef struct {
