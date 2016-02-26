@@ -15,7 +15,7 @@
  * Due: Mar. 4, 2016
 ******************************************************/
 
-#include "myqueue.c"
+#include "myqueue.h"
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>

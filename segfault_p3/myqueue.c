@@ -18,36 +18,6 @@
 //#define DEBUG
 #include "myqueue.h"
 
-int main()
-{
-    enqueue(10);
-    enqueue(9);
-    enqueue(8);
-    enqueue(7);
-    enqueue(6);
-    enqueue(5);
-    enqueue(4);
-    enqueue(3);
-    enqueue(2);
-    enqueue(1);
-    enqueue(0);
-
-    printf("this1: %d\n", dequeue());
-    
-    enqueue(5);
-    enqueue(3);
-    
-    listQueue();
-    
-    clear();
-    printf("this2: %d\n", target(5));
-    clear();
-    printf("this3: %d\n", randomTarget());
-    
-    listQueue();
-    clear();
-}
-
 /**
  * Inserts a process into the end of the queue
  * @param process the process being inserted
