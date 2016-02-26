@@ -17,6 +17,36 @@
 //#define DEBUG
 #include "myqueue.h"
 
+int main()
+{
+    enqueue(10);
+    enqueue(9);
+    enqueue(8);
+    enqueue(7);
+    enqueue(6);
+    enqueue(5);
+    enqueue(4);
+    enqueue(3);
+    enqueue(2);
+    enqueue(1);
+    enqueue(0);
+
+    printf("this1: %d\n", dequeue());
+    
+    enqueue(5);
+    enqueue(3);
+    
+    listQueue();
+    
+    clear();
+    printf("this2: %d\n", target(5));
+    clear();
+    printf("this3: %d\n", randomTarget());
+    
+    listQueue();
+    clear();
+}
+
 /**
  * Inserts a process into the end of the queue
  * @param process the process being inserted
@@ -25,7 +55,7 @@
 bool enqueue(int i) {
 
     if( isFull() ) {
-        printf("Enqueue error - queue is full");
+        printf("Enqueue error - queue is full\n");
         return FALSE;
     }
 
@@ -55,7 +85,7 @@ bool enqueue(int i) {
  */
 int dequeue() {
     if( isEmpty() ) {
-        return NULL;
+        return -1;
     }
 
     int p = myqueue.head->i;
@@ -86,45 +116,103 @@ int target(int num) {
     Node prev;
     int ret;
 
-    while(trav != NULL) {
- 	//target found
-	if(trav -> i == num){
-	    //target at head
-	    if(trav -> prev == NULL)
-	    {
-		trav -> next -> prev = NULL;
-		myqueue.head = trav -> next;
-		//if head was tail set both to null
-		if(myqueue.head == NULL)
-			myqueue.tail = NULL;
-		ret = trav -> i;
-		free(trav);
-		return ret;
+    while(trav != NULL) 
+    {
+ 	    //target found
+	    if(trav -> i == num){
+	        //target at head
+	        if(trav -> prev == NULL)
+	        {
+	        	trav -> next -> prev = NULL;
+	    	    myqueue.head = trav -> next;
+	    	    //if head was tail set both to null
+	    	    if(myqueue.head == NULL)
+	    	    	myqueue.tail = NULL;
+	    	    ret = trav -> i;
+	    	    free(trav);
+	    	    myqueue.size--;
+	    	    return ret;
             }
-	    //target at tail
-	    else if(trav -> next == NULL)
-	    {
-		myqueue.tail = prev;
-		prev -> next = NULL;
-		ret = trav -> i;
-		free(trav);
-		return ret;
+	        //target at tail
+	        else if(trav -> next == NULL)
+	        {
+    		    myqueue.tail = prev;
+	    	    prev -> next = NULL;
+	    	    ret = trav -> i;
+	    	    free(trav);
+	    	    myqueue.size--;
+	    	    return ret;
+	        }
+	        else
+	        {
+		        prev -> next = trav -> next;
+        		trav -> next -> prev = prev;
+		        ret = trav -> i;
+		        free(trav);
+		        myqueue.size--;
+		        return ret;
+	        }
 	    }
-	    else
-	    {
-		prev -> next = trav -> next;
-		trav -> next -> prev = prev;
-		ret = trav -> i;
-		free(trav);
-		return ret
-	    }
-	}
 	prev = trav;
 	trav = trav -> next;
     }
 
-    printf("could not find target\n");
-    return NULL;
+    //printf("could not find target\n");
+    return -1;
+}
+
+int randomTarget()
+{
+    Node trav = myqueue.head;
+    time_t t;
+    srand((unsigned) time(&t));
+    
+    if(trav == NULL)
+        return -1;
+    
+    int i = rand() % myqueue.size;
+    
+    while(i > 0)
+    {
+        
+        if(trav == NULL)
+            return -1;
+            
+        trav = trav -> next;
+        i--;
+    }
+        
+    int x = trav -> i;
+
+    Node temp = trav -> prev;
+    //not at head
+    if(temp != NULL)
+    {
+        temp -> next = trav -> next;
+    }
+    if(trav->next != NULL)
+        trav -> next -> prev = temp;
+        
+    if(myqueue.head == trav)
+        myqueue.head = trav -> next;
+    if(myqueue.tail == trav)
+        myqueue.tail = temp;
+        
+    free(trav);
+    myqueue.size--;
+    return x;     
+}
+
+/**
+ * Determines whether or not the queue is empty
+ * @return true if the queue is empty, false otherwise
+ */
+bool isEmpty() {
+    if( myqueue.head == NULL && myqueue.size == 0 )
+        return TRUE;
+    if( myqueue.head == NULL || myqueue.size == 0 )
+        printf("QUEUE: ERROR: Head state and queue length inconsistent!");
+    return FALSE;
 }
 
 /**

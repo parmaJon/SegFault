@@ -18,7 +18,7 @@
 #define _MYQUEUE_H
 
 #define NUM_REGS 2
-#define MAX_PROCESSES 20
+#define MAX_PROCESSES 10
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -50,9 +50,10 @@ typedef struct {
 
 Queue myqueue;
 
-bool enqueue(Process process);
-Process dequeue();
-void delete(int pid);
+bool enqueue(int i);
+int dequeue();
+int target(int i);
+int randomTarget();
 bool isEmpty();
 bool isFull();
 void clear();
