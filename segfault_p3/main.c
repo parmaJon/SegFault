@@ -22,8 +22,9 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <time.h>
+#include <semaphore.h>
 
-int RAND_MAX;
+int rand_max;
 
 
 /**
@@ -61,7 +62,7 @@ int main(int argc, char *argv[]) {
         args[i] = atoi(argv[i]);
     }
     
-    RAND_MAX = args[1] - 1;
+    rand_max = args[1] - 1;
     
     /* Initialize queue */
     myqueue.size = 0;
@@ -77,3 +78,23 @@ int main(int argc, char *argv[]) {
     
     /* Exit */
 }
+
+/**
+ * Defines the behavior for a producer thread
+ * @param threadID - Integer thread ID of this thread
+ * @return - Status, 0 if successful.
+ */
+int producer(int threadID) {
+    return 0; 
+}
+
+
+/**
+ * Defines the behavior for a consumer thread
+ * @param threadID - Integer thread ID of this thread
+ * @return - Status, 0 if successful.
+ */
+int consumer(int threadID) {
+    return 0; 
+}
+
