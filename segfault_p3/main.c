@@ -23,8 +23,12 @@
 #include <stdlib.h>
 #include <time.h>
 #include <semaphore.h>
+#include <pthread.h>
 
 int rand_max;
+static sem_t empty;
+static sem_t full;
+static sem_t mutex;
 
 
 /**
@@ -42,10 +46,11 @@ int isNum(char *str) {
     return *s == '\0';
 }
 
+
 int main(int argc, char *argv[]) {
 
     int args[3];
-    int i = 1;
+    int i;
 
 
     /* Get command line arguments */
@@ -54,16 +59,16 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    for(; i < 4; i++) {
+    for(i = 1; i < 4; i++) {
         if(!isNum(argv[i])) {
             perror("ERROR: Argument is not an integer\n");
             return -1;
         }
-        args[i] = atoi(argv[i]);
+        args[i-1] = atoi(argv[i]);
     }
     
-    rand_max = args[1] - 1;
-    
+    rand_max = args[0] - 1;
+
     /* Initialize queue */
     myqueue.size = 0;
     myqueue.head = NULL;
@@ -80,9 +85,10 @@ int main(int argc, char *argv[]) {
     /* Create Consumer thread(s) */
     
     /* Sleep for 300 seconds */
-    sleep(300);
+    //sleep(3);
     
     /* Exit */
+    return 0;
 }
 
 /**
@@ -90,7 +96,7 @@ int main(int argc, char *argv[]) {
  * @param threadID - Integer thread ID of this thread
  * @return - Status, 0 if successful.
  */
-int producer(int threadID) {
+void * producer(void * arg) {
     return 0; 
 }
 
@@ -100,7 +106,7 @@ int producer(int threadID) {
  * @param threadID - Integer thread ID of this thread
  * @return - Status, 0 if successful.
  */
-int consumer(int threadID) {
+void * consumer(void * arg) {
     return 0; 
 }
 
