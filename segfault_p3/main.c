@@ -67,6 +67,12 @@ int main(int argc, char *argv[]) {
     myqueue.size = 0;
     myqueue.head = NULL;
     myqueue.tail = NULL;
+    for(i = 0; i < MAX_PROCESSES; i++) {
+        if(enqueue(-1) == FALSE) {
+            perror("Queue initialization failed\n");
+            return -1;
+        }
+    }
     
     /* Create Producer thread(s) */
     
