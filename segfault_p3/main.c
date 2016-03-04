@@ -261,7 +261,7 @@ void * consumer(void * arg) {
         case 2:
             res = target(*data);
             if( res != -1 ) {
-                printf("item (%d) taken by Consumer %d: queue = ", target(*data), *data);
+                printf("item (%d) taken by Consumer %d: queue = ", res, *data);
             }
             else {
                 printf("Consumer %d failed to locate its item: queue = ", *data);
