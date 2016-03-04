@@ -1,18 +1,17 @@
 /******************************************************
  * Filename: main.c
  *
- * Description: This program utilizes pthreads and a
- * queue to simulate a producer/consumer relationship
- * handling various queueing paradigms
+ * Description: This program simulates scheduling
+ * algorithms by queueing and using process information
  *
  * Group: SegFault
  * Authors: Lucas Stuyvesant, Garrett Ransom,
  *     Jonathan Brandt, Travis Nordquist
  * Class: CSE 325
  * Instructor: Zheng
- * Assignment: Lab Project #3
- * Assigned: Feb. 19, 2016
- * Due: Mar. 4, 2016
+ * Assignment: Lab Project #4
+ * Assigned: Mar. 4, 2016
+ * Due: Mar. 25, 2016
 ******************************************************/
 
 #include "myqueue.h"
@@ -52,15 +51,62 @@ int isNum(char *str) {
 
 int main(int argc, char *argv[]) {
 
-    int i;
+    int i,tq;
+    FILE *in;
     srand(time(NULL)); //set random seed
 
     /* Get command line arguments */
-    if(argc != 4) {
-        perror("ERROR: Wrong number of arguments\nUSAGE: ./main [num_producers] [num_consumers] [order_id]\n");
+    if(argc == 4 || argc == 3) {
+    
+        if(strcmp(argv[2],"FCFS") == 0) {
+            if(argc != 3) {
+                perror("ERROR: Wrong number of arguments\nUSAGE: ./scheduler [input_file] FCFS\n");
+                return -1;
+            }
+            
+            
+        }
+        else if(strcmp(argv[2],"RR") == 0) {
+            if(argc != 4) {
+                perror("ERROR: Wrong number of arguments\nUSAGE: ./scheduler [input_file] RR [time_quantum]\n");
+                return -1;
+            }
+            
+            if(!isNum(argv[3]) {
+                perror("ERROR: Time quantum must be a number\n");
+                return -1;
+            }
+            
+            tq = atoi(argv[3]);
+        }
+        else if(strcmp(argv[2],"SRTF") == 0) {
+            if(argc != 3) {
+                perror("ERROR: Wrong number of arguments\nUSAGE: ./scheduler [input_file] SRTF\n");
+                return -1;
+            }
+        }
+        else {
+            perror("ERROR: Scheduling type is invalid\n");
+            return -1;
+        }
+        
+        in = fopen(argv[1], "r");
+        if(in == NULL) {
+            perror("ERROR: File not found\n");
+            return -1;
+        }
+    }
+    else {
+        perror("ERROR: Wrong number of arguments\nUSAGE: ./scheduler [input_file] [FCFS|RR|SRTF] [time_quantum]\n");
         return -1;
     }
-
+    
+    /* Initialize queue */
+    myqueue.size = 0;
+    myqueue.head = NULL;
+    myqueue.tail = NULL;
+    
+    //**********************************************************************************************
     for(i = 1; i < 4; i++) {
         if(!isNum(argv[i])) {
             perror("ERROR: Argument is not an integer\n");
@@ -83,11 +129,6 @@ int main(int argc, char *argv[]) {
     }
     
     rand_max = args[1];
-
-    /* Initialize queue */
-    myqueue.size = 0;
-    myqueue.head = NULL;
-    myqueue.tail = NULL;
 
     mutex = malloc(sizeof(sem_t));
     full = malloc(sizeof(sem_t));
@@ -145,7 +186,7 @@ int main(int argc, char *argv[]) {
 
 
     /* Sleep for 300 seconds */
-    sleep(3);
+    sleep(300);
 
     /* Terminate all threads */
     cont_flag = FALSE;
@@ -215,10 +256,10 @@ void * producer(void * arg) {
         }
     }
 
-    //printf("Prod %d - Inc full\n", *data);
-    sem_post(full);  //increment the count of queue elements
     //printf("Prod %d - Opening lock\n", *data);
     sem_post(mutex); //end critical section
+    //printf("Prod %d - Inc full\n", *data);
+    sem_post(full);  //increment the count of queue elements
 
     free(time);    
   }
@@ -236,8 +277,7 @@ void * producer(void * arg) {
  */
 void * consumer(void * arg) {
   int *data = (int *)arg;
-  int res = 0;
-  //int *tmp = malloc(sizeof(int));
+  int res;
 
   while(cont_flag) {
     //sleep(1);//tmp
@@ -251,24 +291,21 @@ void * consumer(void * arg) {
 
 
     sem_wait(full); //ensure the queue has an element
-    //sem_getvalue(full,tmp);
-    //printf("Con %d - Through full = %d\n", *data, *tmp);
+    //printf("Con %d - Through full\n", *data);
     sem_wait(mutex); //enter critical section
-    //sem_getvalue(mutex,tmp);
-    //printf("Con %d - Through lock = %d\n", *data, *tmp);
+    //printf("Con %d - Through lock\n", *data);
 
-    res = 0;
 
     /* Ensure that execution should still continue */
     if (cont_flag) {
         switch(args[2]) {
         case 0:
             printf("item (%d) taken by Consumer %d: queue = ", dequeue(), *data);
-            listQueue();
+	    listQueue();
             break;
         case 1:
             printf("item (%d) taken by Consumer %d: queue = ", randomTarget(), *data);
-            listQueue();
+	    listQueue();
             break;
         case 2:
             res = target(*data);
@@ -285,22 +322,17 @@ void * consumer(void * arg) {
         }
     }
 
-    //printf("Con %d - Inc empty\n", *data);
-    if( res != -1 ) {
-        sem_post(empty); //indicate that queue space is available
-    }
-    else {
-        sem_post(full); //otherwise, indicate that item was not taken
-    }
     //printf("Con %d - Opening lock\n", *data);
     sem_post(mutex); //end critical section
+    //printf("Con %d - Inc empty\n", *data);
+    if( *data != -1 )
+        sem_post(empty); //indicate that queue space is available
 
     free(time);
   }
 
   printf("Con %d - Terminating\n", *data);
   free(arg);
-  //free(tmp);
   return 0; 
 }
 
