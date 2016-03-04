@@ -17,7 +17,6 @@
 #ifndef _MYQUEUE_H
 #define _MYQUEUE_H
 
-#define NUM_REGS 2
 #define MAX_PROCESSES 10
 
 #include <stdio.h>
@@ -31,15 +30,14 @@ typedef enum {FALSE = 0, TRUE}  bool;
 
 typedef struct process{
     int pid;
-    int psw;
-    int page_table;
-    int regs[NUM_REGS];
+    int arrival_time;
+    int burst_time;
 } *Process;
 
 typedef struct node{
     struct node *prev;
     struct node *next;
-    int i;
+    Process p;
 } *Node;
 
 typedef struct {
