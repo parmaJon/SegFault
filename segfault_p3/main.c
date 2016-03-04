@@ -69,6 +69,14 @@ int main(int argc, char *argv[]) {
         args[i-1] = atoi(argv[i]);
     }
 
+    if( args[0] < 1 || args[0] > 9 ) {
+        perror("ERROR: Number of producer threads must be between 1 and 9 inclusive\n");
+        return -1;
+    }
+    if( args[1] < 1 || args[1] > 9 ) {
+        perror("ERROR: Number of producer threads must be between 1 and 9 inclusive\n");
+        return -1;
+    }
     if( args[2] > 2  ||  args[2] < 0 ) {
         printf("ERROR: Argument 3 must be either 0-FIFO, 1-RANDOM, or 2-TARGETED\n");
         return -1;
@@ -137,7 +145,7 @@ int main(int argc, char *argv[]) {
 
 
     /* Sleep for 300 seconds */
-    sleep(5); //temporarily lowered
+    sleep(300);
     
     /* Terminate all threads */
     cont_flag = FALSE;
