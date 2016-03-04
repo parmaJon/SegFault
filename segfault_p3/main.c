@@ -215,10 +215,10 @@ void * producer(void * arg) {
         }
     }
 
-    //printf("Prod %d - Opening lock\n", *data);
-    sem_post(mutex); //end critical section
     //printf("Prod %d - Inc full\n", *data);
     sem_post(full);  //increment the count of queue elements
+    //printf("Prod %d - Opening lock\n", *data);
+    sem_post(mutex); //end critical section
 
     free(time);    
   }
@@ -236,7 +236,8 @@ void * producer(void * arg) {
  */
 void * consumer(void * arg) {
   int *data = (int *)arg;
-  int res;
+  int res = 0;
+  //int *tmp = malloc(sizeof(int));
 
   while(cont_flag) {
     //sleep(1);//tmp
@@ -250,21 +251,24 @@ void * consumer(void * arg) {
 
 
     sem_wait(full); //ensure the queue has an element
-    //printf("Con %d - Through full\n", *data);
+    //sem_getvalue(full,tmp);
+    //printf("Con %d - Through full = %d\n", *data, *tmp);
     sem_wait(mutex); //enter critical section
-    //printf("Con %d - Through lock\n", *data);
+    //sem_getvalue(mutex,tmp);
+    //printf("Con %d - Through lock = %d\n", *data, *tmp);
 
+    res = 0;
 
     /* Ensure that execution should still continue */
     if (cont_flag) {
         switch(args[2]) {
         case 0:
             printf("item (%d) taken by Consumer %d: queue = ", dequeue(), *data);
-	    listQueue();
+            listQueue();
             break;
         case 1:
             printf("item (%d) taken by Consumer %d: queue = ", randomTarget(), *data);
-	    listQueue();
+            listQueue();
             break;
         case 2:
             res = target(*data);
@@ -281,17 +285,22 @@ void * consumer(void * arg) {
         }
     }
 
+    //printf("Con %d - Inc empty\n", *data);
+    if( res != -1 ) {
+        sem_post(empty); //indicate that queue space is available
+    }
+    else {
+        sem_post(full); //otherwise, indicate that item was not taken
+    }
     //printf("Con %d - Opening lock\n", *data);
     sem_post(mutex); //end critical section
-    //printf("Con %d - Inc empty\n", *data);
-    if( *data != -1 )
-        sem_post(empty); //indicate that queue space is available
 
     free(time);
   }
 
   printf("Con %d - Terminating\n", *data);
   free(arg);
+  //free(tmp);
   return 0; 
 }
 
