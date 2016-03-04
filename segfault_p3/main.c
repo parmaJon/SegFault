@@ -145,7 +145,7 @@ int main(int argc, char *argv[]) {
 
 
     /* Sleep for 300 seconds */
-    sleep(300);
+    sleep(3);
 
     /* Terminate all threads */
     cont_flag = FALSE;
