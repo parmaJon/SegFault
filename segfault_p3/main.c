@@ -25,6 +25,9 @@
 #include <semaphore.h>
 #include <pthread.h>
 
+void * producer(void * arg);
+void * consumer(void * arg);
+
 int rand_max;
 int args[3];
 static sem_t empty;
@@ -96,8 +99,34 @@ int main(int argc, char *argv[]) {
     
     /* Create Producer thread(s) */
     
+    pthread_t prodthreads[args[0]];  //stores producer thread IDs
+    int rcp;     //stores the return code when creating threads (0 if no error)
+    long t;       //thread count
+
+	/* loops to create # of threads determined by user */
+    for(t=args[0]; t > 0; t--){
+      rcp=pthread_create(&prodthreads[t], NULL, &producer, (void *)t);  //returns error code printed below
+      if(rcp){
+	  printf("ERROR producer creation; return code from pthread_create() is %d\n", rcp);
+	  exit(-1);
+  }
+}
+
+
     /* Create Consumer thread(s) */
-    
+    pthread_t conthreads[args[1]];
+    int rcc;
+
+    for(t=args[1]; t>0; t--){
+      rcc=pthread_create(&conthreads[t], NULL, &consumer, (void *)t);
+      if(rcc){
+	  printf("ERROR consumer creation; return code from pthread_create() is %d\n", rcc);
+	  exit(-1);
+  }
+
+}    
+
+
     /* Sleep for 300 seconds */
     sleep(3); //temporarily lowered
     
