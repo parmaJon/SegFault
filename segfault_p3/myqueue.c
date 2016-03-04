@@ -225,10 +225,11 @@ void listQueue() {
         printf("queue is empty.\n");
         return;
     }
+    printf("[ ");
     while(trav -> next != NULL){
         printf("%d, ", trav -> i);
         trav = trav -> next;
     }
-    printf("%d.\n", trav -> i);
+    printf("%d ]\n", trav -> i);
     return;
 }

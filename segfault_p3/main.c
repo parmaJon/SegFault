@@ -81,12 +81,12 @@ int main(int argc, char *argv[]) {
     myqueue.size = 0;
     myqueue.head = NULL;
     myqueue.tail = NULL;
-    for(i = 0; i < MAX_PROCESSES; i++) {
+    /*for(i = 0; i < MAX_PROCESSES; i++) {
         if(enqueue(-1) == FALSE) {
             perror("Queue initialization failed\n");
             return -1;
         }
-    }
+    }*/
 
     /* Initialize semaphores */
     if (sem_init(&empty, 0, MAX_PROCESSES) == -1)
@@ -102,36 +102,50 @@ int main(int argc, char *argv[]) {
     pthread_t prodthreads[args[0]];  //stores producer thread IDs
     int rcp;     //stores the return code when creating threads (0 if no error)
     long t;       //thread count
+    long* proargs[args[0]];
 
 	/* loops to create # of threads determined by user */
-    for(t=args[0]; t > 0; t--){
-      rcp=pthread_create(&prodthreads[t], NULL, &producer, (void *)t);  //returns error code printed below
+    for(t=args[0]-1; t >= 0; t--){
+      long *arg = malloc(sizeof(long));
+      proargs[t] = arg;
+      *arg = t;
+      rcp=pthread_create(&prodthreads[t], NULL, &producer, (void *)arg);  //returns error code printed below
       if(rcp){
 	  printf("ERROR producer creation; return code from pthread_create() is %d\n", rcp);
 	  exit(-1);
-  }
-}
+      }
+    }
 
 
     /* Create Consumer thread(s) */
     pthread_t conthreads[args[1]];
     int rcc;
+    long* conargs[args[1]];
 
-    for(t=args[1]; t>0; t--){
-      rcc=pthread_create(&conthreads[t], NULL, &consumer, (void *)t);
+    for(t=args[1]-1; t >= 0; t--){
+      long *arg = malloc(sizeof(long));
+      conargs[t] = arg;
+      *arg = t;
+      rcc=pthread_create(&conthreads[t], NULL, &consumer, (void *)arg);
       if(rcc){
 	  printf("ERROR consumer creation; return code from pthread_create() is %d\n", rcc);
 	  exit(-1);
-  }
+      }
 
-}    
+    }    
 
 
     /* Sleep for 300 seconds */
-    sleep(3); //temporarily lowered
+    sleep(5); //temporarily lowered
     
     /* Terminate all threads */
-    pthread_exit(NULL);
+    for( t=0; t < args[0]; t++ ) {
+        free(proargs[t]);
+    }
+    for( t=0; t < args[1]; t++ ) {
+        free(conargs[t]);
+    }
+    //pthread_exit(NULL);
 
     /* Exit */
     clear();
@@ -144,6 +158,9 @@ int main(int argc, char *argv[]) {
  * @return - Status, 0 if successful.
  */
 void * producer(void * arg) {
+while(1) {
+    long *data = (long *)arg;
+
     struct timespec* time = malloc(sizeof(struct timespec));
     time->tv_nsec = rand() % 1001;
     time->tv_sec = 0;
@@ -156,19 +173,20 @@ void * producer(void * arg) {
     sem_wait(&empty); //check if room in queue
     sem_wait(&mutex); //begin critical section
 
-    if( enqueue(val) != -1 ) {
-        printf("item (%d) added by Producer %d: queue = \n", val, pthread_self());
+    if( enqueue(val) != FALSE ) {
+        printf("item (%d) added by Producer %d: queue = \n", val, *data);
         listQueue();
     }
     else {
-        printf("Error: Producer %d could not add its value!\n", pthread_self());
+        printf("Error: Producer %d could not add its value!\n", *data);
     }
 
     sem_post(&mutex); //end critical section
     sem_post(&full);  //increment the count of queue elements
 
-    free(time);
-    return 0; 
+    free(time);    
+}
+    return 0;
 }
 
 
@@ -178,7 +196,8 @@ void * producer(void * arg) {
  * @return - Status, 0 if successful.
  */
 void * consumer(void * arg) {
-    //thread_data_t *data = (thread_data_t *)arg;
+while(1) {
+    long *data = (long *)arg;
 
     struct timespec* time = malloc(sizeof(struct timespec));
     time->tv_nsec = rand() % 1001;
@@ -192,25 +211,26 @@ void * consumer(void * arg) {
 
     switch(args[2]) {
     case 0:
-        printf("item (%d) taken by Consumer %d: queue = \n", dequeue(), pthread_self());
+        printf("item (%d) taken by Consumer %d: queue = \n", dequeue(), *data);
 	listQueue();
         break;
     case 1:
-        printf("item (%d) taken by Consumer %d: queue = \n", randomTarget(), pthread_self());
+        printf("item (%d) taken by Consumer %d: queue = \n", randomTarget(), *data);
 	listQueue();
         break;
     case 2:
-        printf("item (%d) taken by Consumer %d: queue = \n", target(pthread_self()), pthread_self());
+        printf("item (%d) taken by Consumer %d: queue = \n", target(*data), *data);
 	listQueue();
         break;
     default:
-        printf("Consumer %d says - \"Wait...what am I supposed to do?\"", pthread_self());
+        printf("Consumer %d says - \"Wait...what am I supposed to do?\"", *data);
     }
 
     sem_post(&mutex); //end critical section
     sem_post(&empty); //indicate that queue space is available
 
     free(time);
+}
     return 0; 
 }
 
