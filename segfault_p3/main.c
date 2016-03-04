@@ -28,9 +28,9 @@
 void * producer(void * arg);
 void * consumer(void * arg);
 
-int rand_max;
+static int rand_max;
 int args[3];
-sem_t empty, full, mutex;
+sem_t *empty, *full, *mutex;
 bool cont_flag = TRUE;
 
 
@@ -39,6 +39,8 @@ bool cont_flag = TRUE;
  * @return 1 if string is a number, 0 otherwise
  */
 int isNum(char *str) {
+
+    return 1;
     
     char *s;
     if(str == NULL) {
@@ -74,22 +76,25 @@ int main(int argc, char *argv[]) {
         return -1;
     }
     
-    rand_max = args[1] - 1;
+    rand_max = args[1];
 
     /* Initialize queue */
     myqueue.size = 0;
     myqueue.head = NULL;
     myqueue.tail = NULL;
 
-    sem_destroy(&mutex);
-    sem_destroy(&full);
-    sem_destroy(&empty);
+    mutex = malloc(sizeof(sem_t));
+    full = malloc(sizeof(sem_t));
+    empty = malloc(sizeof(sem_t));
     /* Initialize semaphores */
-    if (sem_init(&empty, 0, 0) < 0)
+    sem_destroy(mutex);
+    sem_destroy(full);
+    sem_destroy(empty);
+    if (sem_init(empty, 0, MAX_PROCESSES) < 0)
         perror("sem_init failed for empty\n");
-    if (sem_init(&full, 0, 0) < 0)
+    if (sem_init(full, 0, 0) < 0)
         perror("sem_init failed for full\n");
-    if (sem_init(&mutex, 0, 0) < 0)
+    if (sem_init(mutex, 0, 1) < 0)
         perror("sem_init failed for mutex\n");
 
     
@@ -148,6 +153,9 @@ int main(int argc, char *argv[]) {
     pthread_exit(NULL);
 
     /* Exit */
+    free(mutex);
+    free(empty);
+    free(full);
     clear();
     return 0;
 }
@@ -158,9 +166,10 @@ int main(int argc, char *argv[]) {
  * @return - Status, 0 if successful.
  */
 void * producer(void * arg) {
+  int *data = (int *)arg;
+
   while(cont_flag) {
     sleep(1);//tmp
-    int *data = (int *)arg;
 
     struct timespec* time = malloc(sizeof(struct timespec));
     time->tv_nsec = rand() % 1001;
@@ -171,28 +180,29 @@ void * producer(void * arg) {
 
     int val = rand()%rand_max;
     
-    sem_wait(&empty); //check if room in queue
-    printf("Prod %d - Through empty\n", *data);
-    sem_wait(&mutex); //begin critical section
-    printf("Prod %d - Through lock\n", *data);
+    sem_wait(empty); //check if room in queue
+    //printf("Prod %d - Through empty\n", *data);
+    sem_wait(mutex); //begin critical section
+    //printf("Prod %d - Through lock\n", *data);
 
 
     if( enqueue(val) != FALSE ) {
-        printf("item (%d) added by Producer %d: queue = \n", val, *data);
+        printf("item (%d) added by Producer %d: queue = ", val, *data);
         listQueue();
     }
     else {
         printf("Error: Producer %d could not add its value!\n", *data);
     }
 
-    printf("Prod %d - Opening lock\n");
-    sem_post(&mutex); //end critical section
-    printf("Prod %d - Inc full\n");
-    sem_post(&full);  //increment the count of queue elements
+    //printf("Prod %d - Opening lock\n", *data);
+    sem_post(mutex); //end critical section
+    //printf("Prod %d - Inc full\n", *data);
+    sem_post(full);  //increment the count of queue elements
 
     free(time);    
   }
 
+  printf("Prod %d - Terminating\n", *data);
   return 0;
 }
 
@@ -203,9 +213,10 @@ void * producer(void * arg) {
  * @return - Status, 0 if successful.
  */
 void * consumer(void * arg) {
+  int *data = (int *)arg;
+
   while(cont_flag) {
     sleep(1);//tmp
-    int *data = (int *)arg;
 
     struct timespec* time = malloc(sizeof(struct timespec));
     time->tv_nsec = rand() % 1001;
@@ -215,38 +226,38 @@ void * consumer(void * arg) {
     nanosleep(time,time);
 
 
-
-    wait(&full); //ensure the queue has an element
-    printf("Con %d - Through full\n", *data);
-    wait(&mutex); //enter critical section
-    printf("Con %d - Through lock\n", *data);
+    sem_wait(full); //ensure the queue has an element
+    //printf("Con %d - Through full\n", *data);
+    sem_wait(mutex); //enter critical section
+    //printf("Con %d - Through lock\n", *data);
 
 
     switch(args[2]) {
     case 0:
-        printf("item (%d) taken by Consumer %d: queue = \n", dequeue(), *data);
+        printf("item (%d) taken by Consumer %d: queue = ", dequeue(), *data);
 	listQueue();
         break;
     case 1:
-        printf("item (%d) taken by Consumer %d: queue = \n", randomTarget(), *data);
+        printf("item (%d) taken by Consumer %d: queue = ", randomTarget(), *data);
 	listQueue();
         break;
     case 2:
-        printf("item (%d) taken by Consumer %d: queue = \n", target(*data), *data);
+        printf("item (%d) taken by Consumer %d: queue = ", target(*data), *data);
 	listQueue();
         break;
     default:
         printf("Consumer %d says - \"Wait...what am I supposed to do?\"", *data);
     }
 
-    printf("Con %d - Opening lock\n");
-    sem_post(&mutex); //end critical section
-    printf("Con %d - Inc empty\n");
-    sem_post(&empty); //indicate that queue space is available
+    //printf("Con %d - Opening lock\n", *data);
+    sem_post(mutex); //end critical section
+    //printf("Con %d - Inc empty\n", *data);
+    sem_post(empty); //indicate that queue space is available
 
     free(time);
   }
 
+  printf("Con %d - Terminating\n", *data);
   return 0; 
 }
 
