@@ -1,10 +1,10 @@
 CC=gcc
 CFLAGS=-g -c
 
-all: main
+all: scheduler
 
-main: main.o myqueue.o
-	$(CC) -pthread -lrt main.o myqueue.o -o main
+scheduler: main.o myqueue.o
+	$(CC) main.o myqueue.o -o scheduler
 	
 main.o: main.c
 	$(CC) $(CFLAGS) main.c -o main.o
