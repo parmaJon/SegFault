@@ -39,8 +39,6 @@ bool cont_flag = TRUE;
  * @return 1 if string is a number, 0 otherwise
  */
 int isNum(char *str) {
-
-    return 1;
     
     char *s;
     if(str == NULL) {
@@ -144,12 +142,25 @@ int main(int argc, char *argv[]) {
     /* Terminate all threads */
     cont_flag = FALSE;
     sleep(3);
+
+    /* In cases where threads are stuck, increment semaphores to allow termination */
+    while ( args[0] > args[1] ) {
+        sem_post(empty);
+        args[0]--;
+    }
+    while ( args[1] > args[0] ) {
+        sem_post(full);
+        args[0]--;
+    }
+
+    /* Free all thread arguments */
     for( t=0; t < args[0]; t++ ) {
         free(proargs[t]);
     }
     for( t=0; t < args[1]; t++ ) {
         free(conargs[t]);
     }
+
     pthread_exit(NULL);
 
     /* Exit */
@@ -185,13 +196,15 @@ void * producer(void * arg) {
     sem_wait(mutex); //begin critical section
     //printf("Prod %d - Through lock\n", *data);
 
-
-    if( enqueue(val) != FALSE ) {
-        printf("item (%d) added by Producer %d: queue = ", val, *data);
-        listQueue();
-    }
-    else {
-        printf("Error: Producer %d could not add its value!\n", *data);
+    /* Ensure that execution should still continue */
+    if (cont_flag) {
+        if( enqueue(val) != FALSE ) {
+            printf("item (%d) added by Producer %d: queue = ", val, *data);
+            listQueue();
+        }
+        else {
+            printf("Error: Producer %d could not add its value!\n", *data);
+        }
     }
 
     //printf("Prod %d - Opening lock\n", *data);
@@ -232,21 +245,24 @@ void * consumer(void * arg) {
     //printf("Con %d - Through lock\n", *data);
 
 
-    switch(args[2]) {
-    case 0:
-        printf("item (%d) taken by Consumer %d: queue = ", dequeue(), *data);
-	listQueue();
-        break;
-    case 1:
-        printf("item (%d) taken by Consumer %d: queue = ", randomTarget(), *data);
-	listQueue();
-        break;
-    case 2:
-        printf("item (%d) taken by Consumer %d: queue = ", target(*data), *data);
-	listQueue();
-        break;
-    default:
-        printf("Consumer %d says - \"Wait...what am I supposed to do?\"", *data);
+    /* Ensure that execution should still continue */
+    if (cont_flag) {
+        switch(args[2]) {
+        case 0:
+            printf("item (%d) taken by Consumer %d: queue = ", dequeue(), *data);
+	    listQueue();
+            break;
+        case 1:
+            printf("item (%d) taken by Consumer %d: queue = ", randomTarget(), *data);
+	    listQueue();
+            break;
+        case 2:
+            printf("item (%d) taken by Consumer %d: queue = ", target(*data), *data);
+            listQueue();
+            break;
+        default:
+            printf("Consumer %d says - \"Wait...what am I supposed to do?\"", *data);
+        }
     }
 
     //printf("Con %d - Opening lock\n", *data);
