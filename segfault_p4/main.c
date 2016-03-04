@@ -28,7 +28,7 @@ void * producer(void * arg);
 void * consumer(void * arg);
 
 static int rand_max;
-int args[3];
+int time_quantum;
 sem_t *empty, *full, *mutex;
 bool cont_flag = TRUE;
 
@@ -51,8 +51,10 @@ int isNum(char *str) {
 
 int main(int argc, char *argv[]) {
 
-    int i,tq;
+    int i;
+    char buf[33];
     FILE *in;
+    Queue toArrive;
     srand(time(NULL)); //set random seed
 
     /* Get command line arguments */
@@ -63,8 +65,6 @@ int main(int argc, char *argv[]) {
                 perror("ERROR: Wrong number of arguments\nUSAGE: ./scheduler [input_file] FCFS\n");
                 return -1;
             }
-            
-            
         }
         else if(strcmp(argv[2],"RR") == 0) {
             if(argc != 4) {
@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
                 return -1;
             }
             
-            tq = atoi(argv[3]);
+            time_quantum = atoi(argv[3]);
         }
         else if(strcmp(argv[2],"SRTF") == 0) {
             if(argc != 3) {
@@ -105,7 +105,15 @@ int main(int argc, char *argv[]) {
     myqueue.size = 0;
     myqueue.head = NULL;
     myqueue.tail = NULL;
+    toArrive.size = 0;
+    toArrive.head = NULL;
+    toArrive.tail = NULL;
     
+    /* Read input file */
+    while() {
+        //tokenize buffer based on spaces
+        //put into toArrive queue sorted on arrival time
+    }
     //**********************************************************************************************
     for(i = 1; i < 4; i++) {
         if(!isNum(argv[i])) {
