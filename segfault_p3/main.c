@@ -30,9 +30,8 @@ void * consumer(void * arg);
 
 int rand_max;
 int args[3];
-static sem_t empty;
-static sem_t full;
-static sem_t mutex;
+sem_t empty, full, mutex;
+bool cont_flag = TRUE;
 
 
 /**
@@ -81,19 +80,16 @@ int main(int argc, char *argv[]) {
     myqueue.size = 0;
     myqueue.head = NULL;
     myqueue.tail = NULL;
-    /*for(i = 0; i < MAX_PROCESSES; i++) {
-        if(enqueue(-1) == FALSE) {
-            perror("Queue initialization failed\n");
-            return -1;
-        }
-    }*/
 
+    sem_destroy(&mutex);
+    sem_destroy(&full);
+    sem_destroy(&empty);
     /* Initialize semaphores */
-    if (sem_init(&empty, 0, MAX_PROCESSES) == -1)
+    if (sem_init(&empty, 0, 0) < 0)
         perror("sem_init failed for empty\n");
-    if (sem_init(&full, 0, 0) == -1)
+    if (sem_init(&full, 0, 0) < 0)
         perror("sem_init failed for full\n");
-    if (sem_init(&mutex, 0, 1) == -1)
+    if (sem_init(&mutex, 0, 0) < 0)
         perror("sem_init failed for mutex\n");
 
     
@@ -101,15 +97,16 @@ int main(int argc, char *argv[]) {
     
     pthread_t prodthreads[args[0]];  //stores producer thread IDs
     int rcp;     //stores the return code when creating threads (0 if no error)
-    long t;       //thread count
-    long* proargs[args[0]];
+    int t;       //thread count
+    int* proargs[args[0]];
 
 	/* loops to create # of threads determined by user */
     for(t=args[0]-1; t >= 0; t--){
-      long *arg = malloc(sizeof(long));
+      int *arg = malloc(sizeof(int));
       proargs[t] = arg;
       *arg = t;
-      rcp=pthread_create(&prodthreads[t], NULL, &producer, (void *)arg);  //returns error code printed below
+      rcp=pthread_create(&prodthreads[t], NULL, producer, (void *)arg);  //returns error code printed below
+      pthread_detach(prodthreads[t]);
       if(rcp){
 	  printf("ERROR producer creation; return code from pthread_create() is %d\n", rcp);
 	  exit(-1);
@@ -120,13 +117,14 @@ int main(int argc, char *argv[]) {
     /* Create Consumer thread(s) */
     pthread_t conthreads[args[1]];
     int rcc;
-    long* conargs[args[1]];
+    int* conargs[args[1]];
 
     for(t=args[1]-1; t >= 0; t--){
-      long *arg = malloc(sizeof(long));
+      int *arg = malloc(sizeof(int));
       conargs[t] = arg;
       *arg = t;
-      rcc=pthread_create(&conthreads[t], NULL, &consumer, (void *)arg);
+      rcc=pthread_create(&conthreads[t], NULL, consumer, (void *)arg);
+      pthread_detach(conthreads[t]);
       if(rcc){
 	  printf("ERROR consumer creation; return code from pthread_create() is %d\n", rcc);
 	  exit(-1);
@@ -139,13 +137,15 @@ int main(int argc, char *argv[]) {
     sleep(5); //temporarily lowered
     
     /* Terminate all threads */
+    cont_flag = FALSE;
+    sleep(3);
     for( t=0; t < args[0]; t++ ) {
         free(proargs[t]);
     }
     for( t=0; t < args[1]; t++ ) {
         free(conargs[t]);
     }
-    //pthread_exit(NULL);
+    pthread_exit(NULL);
 
     /* Exit */
     clear();
@@ -158,8 +158,9 @@ int main(int argc, char *argv[]) {
  * @return - Status, 0 if successful.
  */
 void * producer(void * arg) {
-while(1) {
-    long *data = (long *)arg;
+  while(cont_flag) {
+    sleep(1);//tmp
+    int *data = (int *)arg;
 
     struct timespec* time = malloc(sizeof(struct timespec));
     time->tv_nsec = rand() % 1001;
@@ -171,7 +172,10 @@ while(1) {
     int val = rand()%rand_max;
     
     sem_wait(&empty); //check if room in queue
+    printf("Prod %d - Through empty\n", *data);
     sem_wait(&mutex); //begin critical section
+    printf("Prod %d - Through lock\n", *data);
+
 
     if( enqueue(val) != FALSE ) {
         printf("item (%d) added by Producer %d: queue = \n", val, *data);
@@ -181,12 +185,15 @@ while(1) {
         printf("Error: Producer %d could not add its value!\n", *data);
     }
 
+    printf("Prod %d - Opening lock\n");
     sem_post(&mutex); //end critical section
+    printf("Prod %d - Inc full\n");
     sem_post(&full);  //increment the count of queue elements
 
     free(time);    
-}
-    return 0;
+  }
+
+  return 0;
 }
 
 
@@ -196,8 +203,9 @@ while(1) {
  * @return - Status, 0 if successful.
  */
 void * consumer(void * arg) {
-while(1) {
-    long *data = (long *)arg;
+  while(cont_flag) {
+    sleep(1);//tmp
+    int *data = (int *)arg;
 
     struct timespec* time = malloc(sizeof(struct timespec));
     time->tv_nsec = rand() % 1001;
@@ -206,8 +214,13 @@ while(1) {
     /* wait for the random amount of time */
     nanosleep(time,time);
 
+
+
     wait(&full); //ensure the queue has an element
+    printf("Con %d - Through full\n", *data);
     wait(&mutex); //enter critical section
+    printf("Con %d - Through lock\n", *data);
+
 
     switch(args[2]) {
     case 0:
@@ -226,11 +239,14 @@ while(1) {
         printf("Consumer %d says - \"Wait...what am I supposed to do?\"", *data);
     }
 
+    printf("Con %d - Opening lock\n");
     sem_post(&mutex); //end critical section
+    printf("Con %d - Inc empty\n");
     sem_post(&empty); //indicate that queue space is available
 
     free(time);
-}
-    return 0; 
+  }
+
+  return 0; 
 }
 

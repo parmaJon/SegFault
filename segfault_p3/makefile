@@ -4,7 +4,7 @@ CFLAGS=-g -c
 all: main
 
 main: main.o myqueue.o
-	$(CC) -pthread main.o myqueue.o -o main
+	$(CC) -pthread -lrt main.o myqueue.o -o main
 	
 main.o: main.c
 	$(CC) $(CFLAGS) main.c -o main.o
