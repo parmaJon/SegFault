@@ -228,6 +228,7 @@ void * producer(void * arg) {
  */
 void * consumer(void * arg) {
   int *data = (int *)arg;
+  int res;
 
   while(cont_flag) {
     sleep(1);//tmp
@@ -258,7 +259,13 @@ void * consumer(void * arg) {
 	    listQueue();
             break;
         case 2:
-            printf("item (%d) taken by Consumer %d: queue = ", target(*data), *data);
+            res = target(*data);
+            if( res != -1 ) {
+                printf("item (%d) taken by Consumer %d: queue = ", target(*data), *data);
+            }
+            else {
+                printf("Consumer %d failed to locate its item: queue = ", *data);
+            }
             listQueue();
             break;
         default:
@@ -269,7 +276,8 @@ void * consumer(void * arg) {
     //printf("Con %d - Opening lock\n", *data);
     sem_post(mutex); //end critical section
     //printf("Con %d - Inc empty\n", *data);
-    sem_post(empty); //indicate that queue space is available
+    if( *data != -1 )
+        sem_post(empty); //indicate that queue space is available
 
     free(time);
   }
