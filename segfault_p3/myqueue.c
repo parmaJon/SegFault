@@ -94,7 +94,8 @@ int target(int num) {
 	        //target at head
 	        if(trav -> prev == NULL)
 	        {
-	        	trav -> next -> prev = NULL;
+                    if ( trav -> next )
+	                trav -> next -> prev = NULL;
 	    	    myqueue.head = trav -> next;
 	    	    //if head was tail set both to null
 	    	    if(myqueue.head == NULL)

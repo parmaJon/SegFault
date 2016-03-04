@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
       proargs[t] = arg;
       *arg = t;
       rcp=pthread_create(&prodthreads[t], NULL, producer, (void *)arg);  //returns error code printed below
-      pthread_detach(prodthreads[t]);
+      //pthread_detach(prodthreads[t]);
       if(rcp){
 	  printf("ERROR producer creation; return code from pthread_create() is %d\n", rcp);
 	  exit(-1);
@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
       conargs[t] = arg;
       *arg = t;
       rcc=pthread_create(&conthreads[t], NULL, consumer, (void *)arg);
-      pthread_detach(conthreads[t]);
+      //pthread_detach(conthreads[t]);
       if(rcc){
 	  printf("ERROR consumer creation; return code from pthread_create() is %d\n", rcc);
 	  exit(-1);
@@ -144,24 +144,24 @@ int main(int argc, char *argv[]) {
     sleep(3);
 
     /* In cases where threads are stuck, increment semaphores to allow termination */
-    while ( args[0] > args[1] ) {
+    i = args[0];
+    while ( i > args[1] ) {
         sem_post(empty);
-        args[0]--;
+        i--;
     }
-    while ( args[1] > args[0] ) {
+    i = args[1];
+    while ( i > args[0] ) {
         sem_post(full);
-        args[0]--;
+        i--;
     }
 
-    /* Free all thread arguments */
+    /* Await termination of all threads */
     for( t=0; t < args[0]; t++ ) {
-        free(proargs[t]);
+        pthread_join(prodthreads[t],NULL);
     }
     for( t=0; t < args[1]; t++ ) {
-        free(conargs[t]);
+        pthread_join(conthreads[t],NULL);
     }
-
-    pthread_exit(NULL);
 
     /* Exit */
     free(mutex);
@@ -216,6 +216,7 @@ void * producer(void * arg) {
   }
 
   printf("Prod %d - Terminating\n", *data);
+  free(arg);
   return 0;
 }
 
@@ -274,6 +275,7 @@ void * consumer(void * arg) {
   }
 
   printf("Con %d - Terminating\n", *data);
+  free(arg);
   return 0; 
 }
 
