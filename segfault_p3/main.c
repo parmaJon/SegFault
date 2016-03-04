@@ -137,7 +137,7 @@ int main(int argc, char *argv[]) {
 
 
     /* Sleep for 300 seconds */
-    sleep(5); //temporarily lowered
+    sleep(300); //temporarily lowered
     
     /* Terminate all threads */
     cont_flag = FALSE;
@@ -180,7 +180,7 @@ void * producer(void * arg) {
   int *data = (int *)arg;
 
   while(cont_flag) {
-    sleep(1);//tmp
+    //sleep(1);//tmp
 
     struct timespec* time = malloc(sizeof(struct timespec));
     time->tv_nsec = rand() % 1001;
@@ -231,7 +231,7 @@ void * consumer(void * arg) {
   int res;
 
   while(cont_flag) {
-    sleep(1);//tmp
+    //sleep(1);//tmp
 
     struct timespec* time = malloc(sizeof(struct timespec));
     time->tv_nsec = rand() % 1001;
