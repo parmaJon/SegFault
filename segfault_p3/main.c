@@ -131,6 +131,7 @@ int main(int argc, char *argv[]) {
     sleep(3); //temporarily lowered
     
     /* Terminate all threads */
+    pthread_exit(NULL);
 
     /* Exit */
     clear();
@@ -156,7 +157,7 @@ void * producer(void * arg) {
     sem_wait(&mutex); //begin critical section
 
     if( enqueue(val) != -1 ) {
-        printf("item (%d) added by Producer %d: queue = ", val, pthread_self());
+        printf("item (%d) added by Producer %d: queue = \n", val, pthread_self());
         listQueue();
     }
     else {
@@ -191,13 +192,16 @@ void * consumer(void * arg) {
 
     switch(args[2]) {
     case 0:
-        printf("item (%d) taken by Consumer %d: queue = ", dequeue(), pthread_self());
+        printf("item (%d) taken by Consumer %d: queue = \n", dequeue(), pthread_self());
+	listQueue();
         break;
     case 1:
-        printf("item (%d) taken by Consumer %d: queue = ", randomTarget(), pthread_self());
+        printf("item (%d) taken by Consumer %d: queue = \n", randomTarget(), pthread_self());
+	listQueue();
         break;
     case 2:
-        printf("item (%d) taken by Consumer %d: queue = ", target(pthread_self()), pthread_self());
+        printf("item (%d) taken by Consumer %d: queue = \n", target(pthread_self()), pthread_self());
+	listQueue();
         break;
     default:
         printf("Consumer %d says - \"Wait...what am I supposed to do?\"", pthread_self());

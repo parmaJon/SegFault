@@ -1,2 +1,34 @@
-standard shit
+/******************************************************
+ * Filename: ReadMe
+ *
+ * Description: documentation for project3
+ *
+ * Group: SegFault
+ * Authors: Lucas Stuyvesant, Garrett Ransom, Jonathan Brandt, Travis Nordquist
+ * Class: CSE 325
+ * Instructor: Zheng
+ * Assignment: Lab Project #3
+ * Assigned: Feb. 19, 2016
+ * Due: March 4, 2016
+******************************************************/
 
+Description/Goals: The goal of this third project is to demonstrate understanding of implementing threads and synchronization techniques.  We have simulated the synchronization of two sets of threads.  The first set are producers which add mock data-sets to an established queue.  The producers wait a random time then carry out their duty of adding to the queue.  The consumers are assigned a retrieve method of either FIFO, Random, or Targeted.  Using mutex locks and semaphores, the threads interact with the queue one at a time, waiting for the queue to become free before adding or removing a data.  
+
+
+Implementation:  The queue implemented is an adapted version of the queue system created in project 2.  It has been modified to queue only integers instead of the process structures that were originally used.  The 3 POSIX semaphores are then created and used for communication between the threads to determine the queue as full, empty and in-use(mutex).  The threads are then created, with the IDs stored in an array.  A new thread is created using pthreads, producers before consumers.  The producers wait a random(using rand()) time before beginning to add to the queue.  The consumers are then created and pull from the queue, as available, using FIFO, Random, or Targeted dequeueing, depending on the assigned method by the user.  This carrys on for 300 seconds, after which, the threads are all terminated and finally the main function terminates and the program exits. The threads print when they push or pull from the queue, displaying the contents of the queue after.  The queue is structured by a doubly linked list of nodes, where each node contains an int. The queue is initialized to full size, but containing only -1 as values. 
+ 
+
+
+Testing Results:  Testing involved all group members, beginning first by testing each component separately.  Several cases were tested, starting with base case of 1 producer, 1 consumer, and ending with the max number of 9 producers and 9 consumers.  
+
+ERRORS found at 1 prod, 1 cons --> "floating point exception"
+
+Testing began with main waiting only a short time (3 seconds) in order to quickly find the more apparent bugs and issues within the program.  As those bugs were corrected and sorted, longer times were tested, with fuller extent of test cases for broader coverage.  
+
+
+
+Bugs:
+
+
+
+Additional Notes:
