@@ -29,9 +29,9 @@ Process roundRobin(Process running, Process new, int timeRemaining, Queue queue)
         //if we did not get a new process
         if(new == NULL)
         {
-            if(enqueue != NULL)
+            if(enqueue != NULL)   //enqueue? is this meant to be queue?
                 enqueue(running);
-            if(myqueue.size > 0)
+            if(queue.size > 0)
                 return dequeue();
             else
                 //TODO Return empty statement
@@ -41,9 +41,9 @@ Process roundRobin(Process running, Process new, int timeRemaining, Queue queue)
         else
         {
             enqueue(new);
-            if(enqueue != NULL)
+            if(enqueue != NULL)  //same here, is enqueue meant to be queue
                 enqueue(running);
-            if(myqueue.size > 0)
+            if(queue.size > 0)  //because the new proc is queued can skip the check and just dequeue?
                 return dequeue();
             else
                 //TODO Return empty statement
@@ -51,7 +51,7 @@ Process roundRobin(Process running, Process new, int timeRemaining, Queue queue)
         }
         
     }
-    //if process is not finished
+    //if process is not finished  <-- should this be if process IS finished?
     else
     {
         //if we did not get a new process
@@ -67,6 +67,36 @@ Process roundRobin(Process running, Process new, int timeRemaining, Queue queue)
 }
 
 
+/**this may be easier to implement as a default of main instead of a new function
+*this process implements firstcome-first served for the queue of processes, queues a new one
+* if needed, dequeues the running process if last needed cycle
+* @param Process running, the currently executing process
+ * @param Process new, a newely arrived process
+ * @param int timeRemaining, time left in execution of running
+ * @return the finished process if finished, else NULL if process needs more time
+*/
+Process fcfs(Process running, Process new, int timeRemaining)
+{
+  //if no new process recieved
+  if(new == NULL){
+	
+	//if current running process will finish
+	if(timeRemaining < 1)
+  	  return dequeue();
+	
+	else
+	  return NULL;
+  }
+   //new process recieved
+  else{
+    enqueue(new);
+
+    if(timeRemaining < 1)
+	return dequeue();
+    else
+        return NULL;
+  }
+}
 
 
 
