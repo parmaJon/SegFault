@@ -18,7 +18,6 @@
 //#define DEBUG
 #include "myqueue.h"
 
-
 /**
  * Inserts a process into the end of the queue
  * @param process the process being inserted
@@ -43,6 +42,78 @@ bool enqueue(Process p, Queue *q) {
     }
     /* Otherwise, just insert at end */
     else {
+        q->tail->next = new;
+        new->prev = q->tail;
+        q->tail = new;
+    }
+
+    q->size++;
+    return TRUE;
+}
+
+/**
+ * Inserts a process into its postion into a sorted srtf-queue
+ * @param process the process being inserted
+ * @return true if successful, false otherwise
+ */
+bool enqueueSRTF(Process p, Queue *q) {
+
+    if( isFull(q) ) {
+        printf("Enqueue error - queue is full\n");
+        return FALSE;
+    }
+
+    Node new = malloc(sizeof(struct node));
+    new -> next = NULL;
+    new -> prev = NULL;
+    new -> p = p;
+
+    /* Edge case for empty queue */
+    if( isEmpty(q) ) {
+        q->head = new;
+        q->tail = new;
+    }
+    /* Otherwise, traverse to find position */
+    else {
+        Node trav = q->head;
+        Node prev = NULL;
+
+        q->tail->next = new;
+        new->prev = q->tail;
+        q->tail = new;
+    }
+
+    q->size++;
+    return TRUE;
+}
+
+/**
+ * Inserts a process into its postion into a sorted toArrive queue
+ * @param process the process being inserted
+ * @return true if successful, false otherwise
+ */
+bool enqueueArrival(Process p, Queue *q) {
+
+    if( isFull(q) ) {
+        printf("Enqueue error - queue is full\n");
+        return FALSE;
+    }
+
+    Node new = malloc(sizeof(struct node));
+    new -> next = NULL;
+    new -> prev = NULL;
+    new -> p = p;
+
+    /* Edge case for empty queue */
+    if( isEmpty(q) ) {
+        q->head = new;
+        q->tail = new;
+    }
+    /* Otherwise, traverse to find position */
+    else {
+        Node trav = q->head;
+        Node prev = NULL;
+
         q->tail->next = new;
         new->prev = q->tail;
         q->tail = new;

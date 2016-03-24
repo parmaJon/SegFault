@@ -102,6 +102,46 @@ Process fcfs(Process running, Process new, int timeRemaining)
 
 
 
+Process srtf(Process running, Process new, int timeRemaining, Queue *ready)
+{
+  //if no new processes
+  if(new == NULL) {
 
+    //if current process will finish, clear it and start next in queue
+    if(timeRemaining < 1) {
+      free(running);
+      return dequeue(ready);
+    }
+    else {
+      return running; //should never be called like this
+    }
+
+  }
+  else {
+
+    //if current process will finish, clear it
+    if(timeRemaining < 1) {
+      free(running);
+      running = NULL;
+    }
+
+    //if the new process has a shorter remaining time, replace the running proc
+    if(timeRemaining > new->burst_time) {
+      if (running)
+        enqueueSRTF(running, ready);
+      return new;
+    }
+    else {  //otherwise, put the new proc in the ready queue
+      enqueueSRTF(new, ready);
+    }
+
+    //if nothing is currently running, pull from ready queue
+    if(!running)
+      return dequeue(ready);
+
+  }
+
+  return running;
+}
 
 
