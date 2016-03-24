@@ -21,7 +21,7 @@
  * @param Queue queue, the process queue
  * @return the process removed, or NULL in error
  */
-Process roundRobin(Process running, Process new, int timeRemaining, Queue queue)
+Process roundRobin(Process running, Process new, int timeRemaining, Queue *queue)
 {
     //if we need to cycle running to end of queue
     if(timeRemaining < 1)

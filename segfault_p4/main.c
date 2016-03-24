@@ -151,25 +151,25 @@ int main(int argc, char *argv[]) {
         //if new process arrived
         //do not incrament time
         //TODO add prints
-        if(timeStamp == toArrive->head->p->arrival_time)
+        if(timeStamp == toArrive.head->p->arrival_time)
         {
             //if fcfs
-                running = FCFS(running, dequeue(toArrive), running->burst_time, ready);
+                running = FCFS(running, dequeue(&toArrive), running->burst_time, &ready);
             //if rr
             {
                 //check if time quantum has run out and reset it. function call will swap out process
                 if(tq == 0)
                 {
                     tq = time_quantum;
-                    running = roundRobin(running, dequeue(toArrive), 0, ready);
+                    running = roundRobin(running, dequeue(toArrive), 0, &ready);
                 }   
                 else if(running->burst_time == 0)
                 {
                     tq = time_quantum;
-                    running = roundRobin(running, dequeue(toArrive), 0, ready);
+                    running = roundRobin(running, dequeue(toArrive), 0, &ready);
                 }
                 else
-                    running = roundRobin(running, dequeue(toArrive), running->burst_time , ready);
+                    running = roundRobin(running, dequeue(toArrive), running->burst_time , &ready);
             }
             //if sjtr
                 //running = FCFS(running, dequeue(toArrive), running->burst_time, myqueue);
@@ -185,11 +185,11 @@ int main(int argc, char *argv[]) {
         else if(running->burst_time == 0 || tq == 0)
         {
             //if fcfs
-                running = FCFS(running, NULL, running->burst_time, ready);
+                running = FCFS(running, NULL, running->burst_time, &ready);
             //if rr
             {
                 tq = time_quantum;   
-                running = roundRobin(running, NULL, 0, ready);
+                running = roundRobin(running, NULL, 0, &ready);
             }
             //if sjtr
                 //running = FCFS(running, NULL, running->burst_time, myqueue);
