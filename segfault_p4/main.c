@@ -52,6 +52,7 @@ int main(int argc, char *argv[]) {
     Queue ready;
     Queue toArrive;
     srand(time(NULL)); //set random seed
+    runtype mode = FCFS;
 
     /* Get command line arguments */
     if(argc == 4 || argc == 3) {
@@ -73,6 +74,8 @@ int main(int argc, char *argv[]) {
                 return -1;
             }
             
+            mode = RR;
+            
             time_quantum = atoi(argv[3]);
         }
         else if(strcmp(argv[2],"SRTF") == 0) {
@@ -80,10 +83,11 @@ int main(int argc, char *argv[]) {
                 perror("ERROR: Wrong number of arguments\nUSAGE: ./scheduler [input_file] SRTF\n");
                 return -1;
             }
+            
+            mode = SRTF;
         }
         else {
-            perror("ERROR: Scheduling type is invalid\n");
-            return -1;
+            mode = FCFS;
         }
         
         in = fopen(argv[1], "r");
@@ -173,13 +177,7 @@ int main(int argc, char *argv[]) {
             }
             //if sjtr
                 //running = FCFS(running, dequeue(toArrive), running->burst_time, myqueue);
-                
-            //if the process is just getting responded to    
-            if(running->response == false)
-            {
-                running->response = true;
-                totalResponseTime = totalResponseTime + (timeStamp - running->arrival_time);
-            }    
+                  
         }
         //if process has run its course
         else if(running->burst_time == 0 || tq == 0)
@@ -193,22 +191,34 @@ int main(int argc, char *argv[]) {
             }
             //if sjtr
                 //running = FCFS(running, NULL, running->burst_time, myqueue);
-                
-            //if the process is just getting responded to    
-            if(running->response == false)
-            {
-                running->response = true;
-                totalResponseTime = totalResponseTime + (timeStamp - running->arrival_time);
-            }      
+                     
         }
         //else we have finished this timestamp, incrament
         else
         {
             //if rr
                 //tq--;
-            running->burst_time--;
+            if(running != NULL)
+            {
+                totalTurnaround = totalTurnaround + 1 + ready.size; 
+                running->burst_time--;
+                
+                //if the process is just getting responded to    
+                if(running->response == false)
+                {
+                    running->response = true;
+                    totalResponseTime = totalResponseTime + (timeStamp - running->arrival_time);
+                }
+            }
+            
+            else
+                unusedCpuCount++;
+                
             timeStamp++;
-            totalTurnaround = totalTurnaround + 1 + ready.size;
+            
+            
+            
+            
         }    
         
     }

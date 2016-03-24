@@ -29,25 +29,47 @@ Process roundRobin(Process running, Process new, int timeRemaining, Queue *queue
         //if we did not get a new process
         if(new == NULL)
         {
-            if(enqueue != NULL)   //enqueue? is this meant to be queue?
-                enqueue(running);
-            if(queue.size > 0)
-                return dequeue();
+            if(running == NULL)
+            {
+                return NULL;
+            }
+            if(running->burst_time > 0)
+            {
+                enqueue(running, queue);
+                return dequeue(queue);
+            }
+            
+            else if(queue.size > 0)
+            {
+                free(running);
+                return dequeue(queue);
+            }    
             else
-                //TODO Return empty statement
-                return ;
+            {
+                free(running);
+                return NULL;
+            }
         }
         //if we got a new process
         else
         {
+            if(running == NULL)
+            {
+                return new;
+            }
+            
             enqueue(new);
-            if(enqueue != NULL)  //same here, is enqueue meant to be queue
-                enqueue(running);
-            if(queue.size > 0)  //because the new proc is queued can skip the check and just dequeue?
-                return dequeue();
+            if(running->burst_time > 0)
+            {
+                enqueue(running, queue);
+                return dequeue(queue);
+            }
+            
             else
-                //TODO Return empty statement
-                return ;
+            {
+                free(running);
+                return dequeue(queue);
+            }    
         }
         
     }
@@ -60,7 +82,7 @@ Process roundRobin(Process running, Process new, int timeRemaining, Queue *queue
         
         //if we got a new process
         else
-            enqueue(new);
+            enqueue(new, queue);
         
         return running;
     }
@@ -75,27 +97,40 @@ Process roundRobin(Process running, Process new, int timeRemaining, Queue *queue
  * @param int timeRemaining, time left in execution of running
  * @return the finished process if finished, else NULL if process needs more time
 */
-Process fcfs(Process running, Process new, int timeRemaining)
+Process fcfs(Process running, Process new, int timeRemaining, Queue *queue)
 {
   //if no new process recieved
   if(new == NULL){
 	
 	//if current running process will finish
 	if(timeRemaining < 1)
-  	  return dequeue();
-	
+	{
+	    if(running == NULL)
+        {
+            return NULL;
+        }
+	    free(running);
+  	    return dequeue(queue);
+	}
 	else
-	  return NULL;
+	  return running;
   }
    //new process recieved
   else{
-    enqueue(new);
+  
+    if(running == NULL)
+    {
+        return new;
+    }
+    
+    enqueue(new, queue);
 
     if(timeRemaining < 1) {
-	    return dequeue();
+        free(running);
+	    return dequeue(queue);
     }
     else {
-        return NULL;
+        return running;
     }
   }
 }
@@ -109,6 +144,9 @@ Process srtf(Process running, Process new, int timeRemaining, Queue *ready)
 
     //if current process will finish, clear it and start next in queue
     if(timeRemaining < 1) {
+      if(running == NULL)
+        return NULL;
+      
       free(running);
       return dequeue(ready);
     }
@@ -121,6 +159,10 @@ Process srtf(Process running, Process new, int timeRemaining, Queue *ready)
 
     //if current process will finish, clear it
     if(timeRemaining < 1) {
+      if(running == NULL)
+      {
+        return new;
+      }
       free(running);
       running = NULL;
     }
