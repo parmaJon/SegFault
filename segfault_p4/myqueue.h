@@ -32,6 +32,7 @@ typedef struct process{
     int pid;
     int arrival_time;
     int burst_time;
+    bool response;
 } *Process;
 
 typedef struct node{

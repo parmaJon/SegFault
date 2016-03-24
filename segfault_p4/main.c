@@ -141,6 +141,10 @@ int main(int argc, char *argv[]) {
     printf("<system time   %d> process %d arrives\n", running->arrival_time, running->pid);
     timeStamp = running->arrival_time;
     int tq = time_quantum;
+    int unusedCpuCount = 0;
+    int totalTimeWaiting = 0;
+    int totalResonseTime = 0;
+    int totalTurnaound = 0;
     
     while(toArrive.size > 0 && running != NULL)
     {
@@ -170,6 +174,12 @@ int main(int argc, char *argv[]) {
             //if sjtr
                 //running = FCFS(running, dequeue(toArrive), running->burst_time, myqueue);
                 
+            //if the process is just getting responded to    
+            if(running->response == false)
+            {
+                running->response = true;
+                totalResponseTime = totalResponseTime + (timeStamp - running->arrival_time);
+            }    
         }
         //if process has run its course
         else if(running->burst_time == 0 || tq == 0)
@@ -183,6 +193,13 @@ int main(int argc, char *argv[]) {
             }
             //if sjtr
                 //running = FCFS(running, NULL, running->burst_time, myqueue);
+                
+            //if the process is just getting responded to    
+            if(running->response == false)
+            {
+                running->response = true;
+                totalResponseTime = totalResponseTime + (timeStamp - running->arrival_time);
+            }      
         }
         //else we have finished this timestamp, incrament
         else
@@ -191,6 +208,7 @@ int main(int argc, char *argv[]) {
                 //tq--;
             running->burst_time--;
             timeStamp++;
+            totalTurnaround = totalTurnaround + 1 + ready.size;
         }    
         
     }
