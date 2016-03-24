@@ -91,10 +91,12 @@ Process fcfs(Process running, Process new, int timeRemaining)
   else{
     enqueue(new);
 
-    if(timeRemaining < 1)
-	return dequeue();
-    else
+    if(timeRemaining < 1) {
+	    return dequeue();
+    }
+    else {
         return NULL;
+    }
   }
 }
 

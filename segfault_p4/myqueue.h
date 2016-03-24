@@ -48,10 +48,10 @@ typedef struct {
 
 Queue myqueue;
 
-bool enqueue(int i);
-int dequeue();
-int target(int i);
-int randomTarget();
+bool enqueue(Process p);
+Process dequeue();
+Process target(int pid);
+Process randomTarget();
 bool isEmpty();
 bool isFull();
 void clear();

@@ -23,7 +23,7 @@
  * @param process the process being inserted
  * @return true if successful, false otherwise
  */
-bool enqueue(int i) {
+bool enqueue(Process p) {
 
     if( isFull() ) {
         printf("Enqueue error - queue is full\n");
@@ -33,7 +33,7 @@ bool enqueue(int i) {
     Node new = malloc(sizeof(struct node));
     new->next = NULL;
     new->prev = myqueue.tail;
-    new->i = i;
+    new->p = p;
 
     /* Edge case for empty queue */
     if( isEmpty() ) {
@@ -54,12 +54,12 @@ bool enqueue(int i) {
  * Removes a process from the front of the queue
  * @return the process removed, or NULL in error
  */
-int dequeue() {
+Process dequeue() {
     if( isEmpty() ) {
-        return -1;
+        return NULL;
     }
 
-    int p = myqueue.head->i;
+    Process p = myqueue.head->p;
 
     /* Edge case for single element queue */
     if( myqueue.head->next == NULL ) {
@@ -82,15 +82,15 @@ int dequeue() {
  * given pid
  * @param pid the pid of the process(es) to be deleted
  */
-int target(int num) {
+Process target(int pid) {
     Node trav = myqueue.head;
     Node prev;
-    int ret;
+    Process ret;
 
     while(trav != NULL) 
     {
  	    //target found
-	    if(trav -> i == num){
+	    if(trav->p->pid == pid){
 	        //target at head
 	        if(trav -> prev == NULL)
 	        {
@@ -100,7 +100,7 @@ int target(int num) {
 	    	    //if head was tail set both to null
 	    	    if(myqueue.head == NULL)
 	    	    	myqueue.tail = NULL;
-	    	    ret = trav -> i;
+	    	    ret = trav -> p;
 	    	    free(trav);
 	    	    myqueue.size--;
 	    	    return ret;
@@ -110,7 +110,7 @@ int target(int num) {
 	        {
     		    myqueue.tail = prev;
 	    	    prev -> next = NULL;
-	    	    ret = trav -> i;
+	    	    ret = trav -> p;
 	    	    free(trav);
 	    	    myqueue.size--;
 	    	    return ret;
@@ -119,60 +119,18 @@ int target(int num) {
 	        {
 		        prev -> next = trav -> next;
         		trav -> next -> prev = prev;
-		        ret = trav -> i;
+		        ret = trav -> p;
 		        free(trav);
 		        myqueue.size--;
 		        return ret;
 	        }
 	    }
-	prev = trav;
-	trav = trav -> next;
+	    prev = trav;
+	    trav = trav -> next;
     }
 
     //printf("could not find target\n");
-    return -1;
-}
-
-int randomTarget()
-{
-    Node trav = myqueue.head;
-    time_t t;
-    srand((unsigned) time(&t));
-    
-    if(trav == NULL)
-        return -1;
-    
-    int i = rand() % myqueue.size;
-    
-    while(i > 0)
-    {
-        
-        if(trav == NULL)
-            return -1;
-            
-        trav = trav -> next;
-        i--;
-    }
-        
-    int x = trav -> i;
-
-    Node temp = trav -> prev;
-    //not at head
-    if(temp != NULL)
-    {
-        temp -> next = trav -> next;
-    }
-    if(trav->next != NULL)
-        trav -> next -> prev = temp;
-        
-    if(myqueue.head == trav)
-        myqueue.head = trav -> next;
-    if(myqueue.tail == trav)
-        myqueue.tail = temp;
-        
-    free(trav);
-    myqueue.size--;
-    return x;     
+    return NULL;
 }
 
 /**
@@ -205,9 +163,10 @@ void clear() {
     Node prev;
 
     while( trav != NULL ) {
-	prev = trav;
-	trav = trav -> next;
-	free(prev);
+      prev = trav;
+      trav = trav -> next;
+      free(prev->p);
+      free(prev);
 
     }
 
@@ -228,9 +187,9 @@ void listQueue() {
     }
     printf("[ ");
     while(trav -> next != NULL){
-        printf("%d, ", trav -> i);
+        printf("%d, ", trav -> p -> pid);
         trav = trav -> next;
     }
-    printf("%d ]\n", trav -> i);
+    printf("%d ]\n", trav -> p -> pid);
     return;
 }
