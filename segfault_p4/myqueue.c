@@ -18,35 +18,37 @@
 //#define DEBUG
 #include "myqueue.h"
 
+
 /**
  * Inserts a process into the end of the queue
  * @param process the process being inserted
  * @return true if successful, false otherwise
  */
-bool enqueue(Process p) {
+bool enqueue(Process p, Queue *q) {
 
-    if( isFull() ) {
+    if( isFull(q) ) {
         printf("Enqueue error - queue is full\n");
         return FALSE;
     }
 
     Node new = malloc(sizeof(struct node));
-    new->next = NULL;
-    new->prev = myqueue.tail;
-    new->p = p;
+    new -> next = NULL;
+    new -> prev = NULL;
+    new -> p = p;
 
     /* Edge case for empty queue */
-    if( isEmpty() ) {
-        myqueue.head = new;
-        myqueue.tail = new;
+    if( isEmpty(q) ) {
+        q->head = new;
+        q->tail = new;
     }
     /* Otherwise, just insert at end */
     else {
-        myqueue.tail->next = new;
-        myqueue.tail = new;
+        q->tail->next = new;
+        new->prev = q->tail;
+        q->tail = new;
     }
 
-    myqueue.size++;
+    q->size++;
     return TRUE;
 }
 
@@ -54,26 +56,26 @@ bool enqueue(Process p) {
  * Removes a process from the front of the queue
  * @return the process removed, or NULL in error
  */
-Process dequeue() {
-    if( isEmpty() ) {
+Process dequeue(Queue *q) {
+    if( isEmpty(q) ) {
         return NULL;
     }
 
-    Process p = myqueue.head->p;
+    Process p = q->head->p;
 
     /* Edge case for single element queue */
-    if( myqueue.head->next == NULL ) {
-        free(myqueue.head);
-        myqueue.head = NULL;
-        myqueue.tail = NULL;
+    if( q->head->next == NULL ) {
+        free(q->head);
+        q->head = NULL;
+        q->tail = NULL;
     }
     else {
-        myqueue.head = myqueue.head->next;
-        free(myqueue.head->prev);
-        myqueue.head->prev = NULL;
+        q->head = q->head->next;
+        free(q->head->prev);
+        q->head->prev = NULL;
     }
 
-    myqueue.size--;
+    q->size--;
     return p;
 }
 
@@ -82,8 +84,8 @@ Process dequeue() {
  * given pid
  * @param pid the pid of the process(es) to be deleted
  */
-Process target(int pid) {
-    Node trav = myqueue.head;
+Process target(int pid, Queue *q) {
+    Node trav = q->head;
     Node prev;
     Process ret;
 
@@ -96,23 +98,23 @@ Process target(int pid) {
 	        {
                     if ( trav -> next )
 	                trav -> next -> prev = NULL;
-	    	    myqueue.head = trav -> next;
+	    	    q->head = trav -> next;
 	    	    //if head was tail set both to null
-	    	    if(myqueue.head == NULL)
-	    	    	myqueue.tail = NULL;
+	    	    if(q->head == NULL)
+	    	    	q->tail = NULL;
 	    	    ret = trav -> p;
 	    	    free(trav);
-	    	    myqueue.size--;
+	    	    q->size--;
 	    	    return ret;
             }
 	        //target at tail
 	        else if(trav -> next == NULL)
 	        {
-    		    myqueue.tail = prev;
+    		    q->tail = prev;
 	    	    prev -> next = NULL;
 	    	    ret = trav -> p;
 	    	    free(trav);
-	    	    myqueue.size--;
+	    	    q->size--;
 	    	    return ret;
 	        }
 	        else
@@ -121,7 +123,7 @@ Process target(int pid) {
         		trav -> next -> prev = prev;
 		        ret = trav -> p;
 		        free(trav);
-		        myqueue.size--;
+		        q->size--;
 		        return ret;
 	        }
 	    }
@@ -137,10 +139,10 @@ Process target(int pid) {
  * Determines whether or not the queue is empty
  * @return true if the queue is empty, false otherwise
  */
-bool isEmpty() {
-    if( myqueue.head == NULL && myqueue.size == 0 )
+bool isEmpty(Queue *q) {
+    if( q->head == NULL && q->size == 0 )
         return TRUE;
-    if( myqueue.head == NULL || myqueue.size == 0 )
+    if( q->head == NULL || q->size == 0 )
         printf("QUEUE: ERROR: Head state and queue length inconsistent!");
     return FALSE;
 }
@@ -149,8 +151,8 @@ bool isEmpty() {
  * Determines whether or not the queue is full
  * @return true if the queue is full, false otherwise
  */
-bool isFull() {
-    if( myqueue.size < MAX_PROCESSES )
+bool isFull(Queue *q) {
+    if( q->size < MAX_PROCESSES )
         return FALSE;
     return TRUE;
 }
@@ -158,8 +160,8 @@ bool isFull() {
 /**
  * Removes all items from the queue
  */
-void clear() {
-    Node trav = myqueue.head;
+void clear(Queue *q) {
+    Node trav = q->head;
     Node prev;
 
     while( trav != NULL ) {
@@ -170,16 +172,16 @@ void clear() {
 
     }
 
-    myqueue.head = NULL;
-    myqueue.tail = NULL;
-    myqueue.size = 0;
+    q->head = NULL;
+    q->tail = NULL;
+    q->size = 0;
 }
 
 /**
  * Displays the processes in the queue
  */
-void listQueue() {
-    Node trav = myqueue.head;
+void listQueue(Queue *q) {
+    Node trav = q->head;
     
     if(trav == NULL){
         printf("queue is empty.\n");

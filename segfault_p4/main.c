@@ -52,6 +52,7 @@ int main(int argc, char *argv[]) {
     int i;
     char buf[33];
     FILE *in;
+    Queue ready;
     Queue toArrive;
     srand(time(NULL)); //set random seed
 
@@ -99,16 +100,39 @@ int main(int argc, char *argv[]) {
         return -1;
     }
     
-    /* Initialize queue */
-    myqueue.size = 0;
-    myqueue.head = NULL;
-    myqueue.tail = NULL;
+    /* Initialize queues */
+    ready.size = 0;
+    ready.head = NULL;
+    ready.tail = NULL;
     toArrive.size = 0;
     toArrive.head = NULL;
     toArrive.tail = NULL;
+   
+
+    //Example of modified queue use 
+    Process new = malloc(sizeof(struct process));
+    new -> pid = 0;
+    enqueue(new,&ready);
+    listQueue(&ready);
+
+    new = malloc(sizeof(struct process));
+    new -> pid = 1;
+    enqueue(new, &toArrive);
+    new = malloc(sizeof(struct process));
+    new -> pid = 2;
+    enqueue(new, &toArrive);
+    listQueue(&toArrive);
+    clear(&toArrive);
+    listQueue(&toArrive);
     
+    listQueue(&ready);
+    clear(&ready);
+    listQueue(&ready);
+
+
     /* Read input file */
     while(1) {
+        break;
         //tokenize buffer based on spaces
         //put into toArrive queue sorted on arrival time
     }

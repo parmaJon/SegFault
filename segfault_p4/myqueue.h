@@ -46,15 +46,13 @@ typedef struct {
     Node tail;
 } Queue;
 
-Queue myqueue;
-
-bool enqueue(Process p);
-Process dequeue();
-Process target(int pid);
-Process randomTarget();
-bool isEmpty();
-bool isFull();
-void clear();
-void listQueue();
+bool enqueue(Process p, Queue *q);
+Process dequeue(Queue *q);
+Process target(int pid, Queue *q);
+Process randomTarget(Queue *q);
+bool isEmpty(Queue *q);
+bool isFull(Queue *q);
+void clear(Queue *q);
+void listQueue(Queue *q);
 
 #endif /* MYQUEUE_H */

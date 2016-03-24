@@ -14,4 +14,4 @@ myqueue.o: myqueue.c myqueue.h
 
 clean:
 	rm *.o
-	rm main
+	rm scheduler
