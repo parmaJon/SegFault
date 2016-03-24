@@ -24,9 +24,6 @@
 #include <semaphore.h>
 #include <pthread.h>
 
-void * producer(void * arg);
-void * consumer(void * arg);
-
 static int rand_max;
 int time_quantum;
 
@@ -110,7 +107,7 @@ int main(int argc, char *argv[]) {
    
 
     //Example of modified queue use 
-    Process new = malloc(sizeof(struct process));
+   /* Process new = malloc(sizeof(struct process));
     new -> pid = 0;
     enqueue(new,&ready);
     listQueue(&ready);
@@ -127,7 +124,7 @@ int main(int argc, char *argv[]) {
     
     listQueue(&ready);
     clear(&ready);
-    listQueue(&ready);
+    listQueue(&ready);*/
 
 
     /* Read input file */
@@ -136,5 +133,73 @@ int main(int argc, char *argv[]) {
         //tokenize buffer based on spaces
         //put into toArrive queue sorted on arrival time
     }
+
+    Process running = NULL;
+    int timeStamp = 0;
+    
+    running = dequeue(toArrive);
+    printf("<system time   %d> process %d arrives\n", running->arrival_time, running->pid);
+    timeStamp = running->arrival_time;
+    int tq = time_quantum;
+    
+    while(toArrive.size > 0 && running != NULL)
+    {
+        //if new process arrived
+        //do not incrament time
+        //TODO add prints
+        if(timeStamp == toArrive->head->p->arrival_time)
+        {
+            //if fcfs
+                running = FCFS(running, dequeue(toArrive), running->burst_time, ready);
+            //if rr
+            {
+                //check if time quantum has run out and reset it. function call will swap out process
+                if(tq == 0)
+                {
+                    tq = time_quantum;
+                    running = roundRobin(running, dequeue(toArrive), 0, ready);
+                }   
+                else if(running->burst_time == 0)
+                {
+                    tq = time_quantum;
+                    running = roundRobin(running, dequeue(toArrive), 0, ready);
+                }
+                else
+                    running = roundRobin(running, dequeue(toArrive), running->burst_time , ready);
+            }
+            //if sjtr
+                //running = FCFS(running, dequeue(toArrive), running->burst_time, myqueue);
+                
+        }
+        //if process has run its course
+        else if(running->burst_time == 0 || tq == 0)
+        {
+            //if fcfs
+                running = FCFS(running, NULL, running->burst_time, ready);
+            //if rr
+            {
+                tq = time_quantum;   
+                running = roundRobin(running, NULL, 0, ready);
+            }
+            //if sjtr
+                //running = FCFS(running, NULL, running->burst_time, myqueue);
+        }
+        //else we have finished this timestamp, incrament
+        else
+        {
+            //if rr
+                //tq--;
+            running->burst_time--;
+            timeStamp++;
+        }    
+        
+    }
+    
+    
+    
+    
+    return 0;
+
+
 
 }
