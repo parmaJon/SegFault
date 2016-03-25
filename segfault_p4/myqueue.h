@@ -25,6 +25,7 @@
 #include <errno.h>
 
 typedef enum {FALSE = 0, TRUE}  bool;
+typedef enum {FCFS = 0, RR = 1, SRTF = 2} runtype;
 //#define TRUE 1;
 //#define FALSE 0;
 
@@ -55,5 +56,8 @@ bool isEmpty(Queue *q);
 bool isFull(Queue *q);
 void clear(Queue *q);
 void listQueue(Queue *q);
+Process roundRobin(Process running, Process new, int timeRemaining, Queue *queue);
+Process fcfs(Process running, Process new, int timeRemaining, Queue *queue);
+Process srtf(Process running, Process new, int timeRemaining, Queue *ready);
 
 #endif /* MYQUEUE_H */
