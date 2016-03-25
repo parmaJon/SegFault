@@ -146,12 +146,12 @@ int main(int argc, char *argv[]) {
     }
 
 
-   fclose(in);
+    fclose(in);
 
     printf("% ");
     printf("scheduler %s %s\n", argv[1], argv[2]);
     printf("scheduling algorithm: %s\n", argv[2]);
-    printf("total %d tasks are read from \" %s \". press 'enter' to start...\n", toArrive.size, argv[1]);
+    printf("total %d tasks are read from \" %s \". press 'enter' to start... \n", toArrive.size, argv[1]);
     getchar();
     printf("\n=========================================\n");
 

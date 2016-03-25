@@ -6,12 +6,13 @@
  * process queue
  *
  * Group: SegFault
- * Authors: Lucas Stuyvesant
+ * Authors: Lucas Stuyvesant, Garrett Ransom,
+ *     Jonathan Brandt, Travis Nordquist
  * Class: CSE 325
  * Instructor: Zheng
- * Assignment: Lab Project #2
- * Assigned: Feb. 5, 2016
- * Due: Feb. 19, 2016
+ * Assignment: Lab Project #4
+ * Assigned: Mar. 4, 2016
+ * Due: Mar. 25, 2016
 ******************************************************/
 
 #ifndef _MYQUEUE_H
