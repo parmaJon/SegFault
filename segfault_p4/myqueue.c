@@ -113,10 +113,27 @@ bool enqueueArrival(Process p, Queue *q) {
     else {
         Node trav = q->head;
         Node prev = NULL;
-
-        q->tail->next = new;
-        new->prev = q->tail;
-        q->tail = new;
+        while(trav->p->burst_time < new->p->burst_time && trav != NULL)
+        {
+            prev = trav;
+            trav = trav->next;
+        }
+        if(prev != NULL)
+        {
+            prev->next = new;
+            new->prev = prev;
+        }
+        else
+            q->head = new;
+        if(trav != NULL)
+        {
+            trav->prev = new;
+            new->next = trav;
+        }
+        else
+            q->tail = new;
+        
+        
     }
 
     q->size++;
