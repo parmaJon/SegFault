@@ -56,5 +56,8 @@ bool isEmpty(Queue *q);
 bool isFull(Queue *q);
 void clear(Queue *q);
 void listQueue(Queue *q);
+Process roundRobin(Process running, Process new, int timeRemaining, Queue *queue);
+Process fcfs(Process running, Process new, int timeRemaining, Queue *queue);
+Process srtf(Process running, Process new, int timeRemaining, Queue *ready);
 
 #endif /* MYQUEUE_H */

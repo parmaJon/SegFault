@@ -138,6 +138,13 @@ int main(int argc, char *argv[]) {
         //put into toArrive queue sorted on arrival time
     }
 
+    printf("% ");
+    printf("scheduler %s %s\n", argv[1], argv[2]);
+    printf("scheduling algorithm: %s\n", argv[2]);
+    printf("total %d tasks are read from \" %s \". press 'enter' to start\n", toArrive.size, argv[1]);
+    printf("\n=========================================\n");
+
+
     Process running = NULL;
     int timeStamp = 0;
     
@@ -148,7 +155,8 @@ int main(int argc, char *argv[]) {
     int unusedCpuCount = 0;
     int totalTimeWaiting = 0;
     int totalResonseTime = 0;
-    int totalTurnaound = 0;
+    int totalTurnaround = 0;
+    int totalProcessCount = 0;
     
     while(toArrive.size > 0 && running != NULL)
     {
@@ -157,9 +165,15 @@ int main(int argc, char *argv[]) {
         //TODO add prints
         if(timeStamp == toArrive.head->p->arrival_time)
         {
-            //if fcfs
+            printf("<system time   %d> process %d arrives\n", timeStamp, toArrive.head->p->pid);
+            if(running->burst_time == 0)
+            {
+                totalProcessCount++;
+                printf("<system time   %d>", timeStamp);
+            }    
+            if(mode == FCFS)
                 running = FCFS(running, dequeue(&toArrive), running->burst_time, &ready);
-            //if rr
+            else if(mode == RR)
             {
                 //check if time quantum has run out and reset it. function call will swap out process
                 if(tq == 0)
@@ -175,32 +189,39 @@ int main(int argc, char *argv[]) {
                 else
                     running = roundRobin(running, dequeue(toArrive), running->burst_time , &ready);
             }
-            //if sjtr
+            else
                 //running = FCFS(running, dequeue(toArrive), running->burst_time, myqueue);
                   
         }
         //if process has run its course
         else if(running->burst_time == 0 || tq == 0)
         {
-            //if fcfs
+            if(running->burst_time == 0)
+            {
+                totalProcessCount++;
+                printf("<system time   %d>", timeStamp);
+            } 
+            if(mode == FCFS)
                 running = FCFS(running, NULL, running->burst_time, &ready);
-            //if rr
+            else if(mode == RR)
             {
                 tq = time_quantum;   
                 running = roundRobin(running, NULL, 0, &ready);
             }
-            //if sjtr
+            else
                 //running = FCFS(running, NULL, running->burst_time, myqueue);
                      
         }
         //else we have finished this timestamp, incrament
         else
         {
-            //if rr
-                //tq--;
+            if(mode == RR)
+                tq--;
+                
             if(running != NULL)
             {
-                totalTurnaround = totalTurnaround + 1 + ready.size; 
+                totalTurnaround = totalTurnaround + 1 + ready.size;
+                totalTimeWaiting = totalTimeWaiting + ready.size; 
                 running->burst_time--;
                 
                 //if the process is just getting responded to    
@@ -209,21 +230,27 @@ int main(int argc, char *argv[]) {
                     running->response = true;
                     totalResponseTime = totalResponseTime + (timeStamp - running->arrival_time);
                 }
+                printf("<system time   %d> process %d is running\n", timeStamp, running->pid);
             }
             
             else
+            {
                 unusedCpuCount++;
-                
+                printf("<system time   %d> CPU is idle\n", timeStamp);
+            }
+               
             timeStamp++;
-            
-            
-            
             
         }    
         
     }
     
-    
+    printf("\n=========================================\n");
+    printf("CPU Utilization: %f%\n", ((timeStamp-unusedCpuCount)/totalProcessCount));
+    printf("Average waiting time: %f%\n", (totalTimeWaiting/totalProcessCount));
+    printf("Average response time: %f%\n", (totalResponseTime/totalProcessCount));
+    printf("Average turnarounda time: %f%\n", (totalTurnaround/totalProcessCount));
+    printf("=========================================\n");
     
     
     return 0;

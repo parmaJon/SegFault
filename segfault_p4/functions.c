@@ -13,6 +13,8 @@
  * Due: Mar. 25, 2016
 ******************************************************/
 
+#include "myqueue.h"
+
 /**
  * recieves a message from the running state and handles it
  * @param Process running, the currently executing process
@@ -41,11 +43,13 @@ Process roundRobin(Process running, Process new, int timeRemaining, Queue *queue
             
             else if(queue.size > 0)
             {
+                printf(" process %d finished\n", running->pid);
                 free(running);
                 return dequeue(queue);
             }    
             else
             {
+                printf(" process %d finished\n", running->pid);
                 free(running);
                 return NULL;
             }
@@ -67,13 +71,14 @@ Process roundRobin(Process running, Process new, int timeRemaining, Queue *queue
             
             else
             {
+                printf(" process %d finished\n", running->pid);
                 free(running);
                 return dequeue(queue);
             }    
         }
         
     }
-    //if process is not finished  <-- should this be if process IS finished?
+    //if process is not finished
     else
     {
         //if we did not get a new process
@@ -109,6 +114,7 @@ Process fcfs(Process running, Process new, int timeRemaining, Queue *queue)
         {
             return NULL;
         }
+        printf(" process %d finished\n", running->pid);
 	    free(running);
   	    return dequeue(queue);
 	}
@@ -126,6 +132,7 @@ Process fcfs(Process running, Process new, int timeRemaining, Queue *queue)
     enqueue(new, queue);
 
     if(timeRemaining < 1) {
+        printf(" process %d finished\n", running->pid);
         free(running);
 	    return dequeue(queue);
     }
@@ -147,6 +154,7 @@ Process srtf(Process running, Process new, int timeRemaining, Queue *ready)
       if(running == NULL)
         return NULL;
       
+      printf(" process %d finished\n", running->pid);
       free(running);
       return dequeue(ready);
     }
@@ -163,6 +171,7 @@ Process srtf(Process running, Process new, int timeRemaining, Queue *ready)
       {
         return new;
       }
+      printf(" process %d finished\n", running->pid);
       free(running);
       running = NULL;
     }
