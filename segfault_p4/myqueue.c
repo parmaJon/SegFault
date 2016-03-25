@@ -77,26 +77,26 @@ bool enqueueSRTF(Process p, Queue *q) {
     else {
         Node trav = q->head;
         Node prev = NULL;
-
-        while(trav != NULL  &&  tav->p->burst_time <= p->burst_time) {
-            prev = trav;
-            trav = trav->next;
+        
+        while(trav != NULL && trav->p->burst_time <= p->burst_time) {
+        	prev = trav;
+        	trav = trav->next;
         }
 
-        if(prev) { //if not at head
-          prev->next = new;
-        }
-        else {
-          q->head = new;
-        }
-        new->prev = prev;
-        new->next = trav;
-        if(trav) { //if not at tail
-          trav->prev = new;
-        }
-        else {
-          q->tail = new;
-        }
+		if(prev) //if not at head
+			prev->next = new;
+			
+		else
+			q->head = new;
+			
+		new->prev = prev;
+		new->next = trav;
+		
+		if(trav) //if not at tail
+			trav->prev = new;
+			
+		else
+			q->tail = new;
     }
 
     q->size++;
@@ -129,27 +129,26 @@ bool enqueueArrival(Process p, Queue *q) {
     else {
         Node trav = q->head;
         Node prev = NULL;
-
-        while(trav != NULL  &&  tav->p->arrival_time <= p->arrival_time) {
+        while(trav != NULL && (trav->p->arrival_time <= new->p->arrival_time))
+        {
             prev = trav;
             trav = trav->next;
         }
-
-        if(prev) { //if not at head
-          prev->next = new;
+        if(prev != NULL)
+        {
+            prev->next = new;
+            new->prev = prev;
         }
-        else {
-          q->head = new;
+        else
+            q->head = new;
+        if(trav != NULL)
+        {
+            trav->prev = new;
+            new->next = trav;
         }
-        new->prev = prev;
-        new->next = trav;
-        if(trav) { //if not at tail
-          trav->prev = new;
-        }
-        else {
-          q->tail = new;
-        }
-
+        else
+            q->tail = new;
+        
     }
 
     q->size++;

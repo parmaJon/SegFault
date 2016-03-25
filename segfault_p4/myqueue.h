@@ -49,6 +49,7 @@ typedef struct {
 } Queue;
 
 bool enqueue(Process p, Queue *q);
+bool enqueueArrival(Process p, Queue *q);
 Process dequeue(Queue *q);
 Process target(int pid, Queue *q);
 Process randomTarget(Queue *q);
@@ -56,8 +57,5 @@ bool isEmpty(Queue *q);
 bool isFull(Queue *q);
 void clear(Queue *q);
 void listQueue(Queue *q);
-Process roundRobin(Process running, Process new, int timeRemaining, Queue *queue);
-Process fcfs(Process running, Process new, int timeRemaining, Queue *queue);
-Process srtf(Process running, Process new, int timeRemaining, Queue *ready);
 
 #endif /* MYQUEUE_H */

@@ -14,6 +14,7 @@
 ******************************************************/
 
 #include "myqueue.h"
+#include "functions.h"
 
 /**
  * recieves a message from the running state and handles it
@@ -41,7 +42,7 @@ Process roundRobin(Process running, Process new, int timeRemaining, Queue *queue
                 return dequeue(queue);
             }
             
-            else if(queue.size > 0)
+            else if(queue->size > 0)
             {
                 printf(" process %d finished\n", running->pid);
                 free(running);
@@ -62,7 +63,7 @@ Process roundRobin(Process running, Process new, int timeRemaining, Queue *queue
                 return new;
             }
             
-            enqueue(new);
+            enqueue(new, queue);
             if(running->burst_time > 0)
             {
                 enqueue(running, queue);
@@ -82,7 +83,7 @@ Process roundRobin(Process running, Process new, int timeRemaining, Queue *queue
     else
     {
         //if we did not get a new process
-        if(new == NULL)
+        if(new == NULL){}
             //dont think anything is neccesary just a check
         
         //if we got a new process
@@ -104,7 +105,7 @@ Process roundRobin(Process running, Process new, int timeRemaining, Queue *queue
 */
 Process fcfs(Process running, Process new, int timeRemaining, Queue *queue)
 {
-  //if no new process recieved
+/*  //if no new process recieved
   if(new == NULL){
 	
 	//if current running process will finish
@@ -122,24 +123,23 @@ Process fcfs(Process running, Process new, int timeRemaining, Queue *queue)
 	  return running;
   }
    //new process recieved
-  else{
+  else{*/
   
     if(running == NULL)
-    {
         return new;
-    }
     
-    enqueue(new, queue);
+    if(new != NULL)
+    	enqueue(new, queue);
 
     if(timeRemaining < 1) {
         printf(" process %d finished\n", running->pid);
         free(running);
 	    return dequeue(queue);
     }
-    else {
+    else
         return running;
-    }
-  }
+
+  //}
 }
 
 
