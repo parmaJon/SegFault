@@ -49,12 +49,10 @@ int main(int argc, char *argv[]) {
 
     int i;
     char buf[256];
-    char s[256];
     char *tok;
     FILE *in;
     Queue ready;
     Queue toArrive;
-    srand(time(NULL)); //set random seed
     runtype mode = FCFS;
 
     /* Get command line arguments */
@@ -113,27 +111,6 @@ int main(int argc, char *argv[]) {
     toArrive.size = 0;
     toArrive.head = NULL;
     toArrive.tail = NULL;
-   
-
-    //Example of modified queue use 
-   /* Process new = malloc(sizeof(struct process));
-    new -> pid = 0;
-    enqueue(new,&ready);
-    listQueue(&ready);
-
-    new = malloc(sizeof(struct process));
-    new -> pid = 1;
-    enqueue(new, &toArrive);
-    new = malloc(sizeof(struct process));
-    new -> pid = 2;
-    enqueue(new, &toArrive);
-    listQueue(&toArrive);
-    clear(&toArrive);
-    listQueue(&toArrive);
-    
-    listQueue(&ready);
-    clear(&ready);
-    listQueue(&ready);*/
 
 
     /* Read input file */
@@ -200,9 +177,7 @@ int main(int argc, char *argv[]) {
     
     while(toArrive.size > 0 || running != NULL)
     {
-        //if new process arrived
-        //do not incrament time
-        //TODO add prints
+        //if new process arrived do not increment time
         if(toArrive.size > 0 && timeStamp == toArrive.head->p->arrival_time)
         {
             printf("<system time   %d> process %d arrives\n", timeStamp, toArrive.head->p->pid);
@@ -264,7 +239,7 @@ int main(int argc, char *argv[]) {
                 running = srtf(running, NULL, running->burst_time, &ready);
                      
         }
-        //else we have finished this timestamp, incrament
+        //else we have finished this timestamp, increment
         else
         {
             if(mode == RR)
@@ -299,9 +274,9 @@ int main(int argc, char *argv[]) {
     
     printf("\n=========================================\n");
     printf("CPU Utilization: %f%\n", ((timeStamp-unusedCpuCount)/(float)timeStamp) * 100);
-    printf("Average waiting time: %f\n", (totalTimeWaiting/(float)totalProcessCount));
-    printf("Average response time: %f\n", (totalResponseTime/(float)totalProcessCount));
-    printf("Average turnarounda time: %f\n", (totalTurnaround/(float)totalProcessCount));
+    printf("Average Waiting Time: %f\n", (totalTimeWaiting/(float)totalProcessCount));
+    printf("Average Response Time: %f\n", (totalResponseTime/(float)totalProcessCount));
+    printf("Average Turnaround Time: %f\n", (totalTurnaround/(float)totalProcessCount));
     printf("=========================================\n");
     
     
