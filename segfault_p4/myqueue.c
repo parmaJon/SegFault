@@ -149,6 +149,7 @@ bool enqueueArrival(Process p, Queue *q) {
         else {
           q->tail = new;
         }
+
     }
 
     q->size++;
