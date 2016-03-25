@@ -21,6 +21,7 @@
 /**
  * Inserts a process into the end of the queue
  * @param process the process being inserted
+ * @param Queue *q, pointer to the appropriate queue
  * @return true if successful, false otherwise
  */
 bool enqueue(Process p, Queue *q) {
@@ -53,7 +54,8 @@ bool enqueue(Process p, Queue *q) {
 
 /**
  * Inserts a process into its postion into a sorted srtf-queue
- * @param process the process being inserted
+ * @param Process p, the process being inserted
+ * @param Queue *q, pointer to the appropriate ready queue
  * @return true if successful, false otherwise
  */
 bool enqueueSRTF(Process p, Queue *q) {
@@ -104,8 +106,9 @@ bool enqueueSRTF(Process p, Queue *q) {
 }
 
 /**
- * Inserts a process into its postion into a sorted toArrive queue
- * @param process the process being inserted
+ * Inserts a process into its postion into a sorted toArrive
+ * @param Process p, the process being inserted
+ * @param Queue *q, pointer to the appropriate toArrive queue
  * @return true if successful, false otherwise
  */
 bool enqueueArrival(Process p, Queue *q) {
@@ -157,6 +160,7 @@ bool enqueueArrival(Process p, Queue *q) {
 
 /**
  * Removes a process from the front of the queue
+ * @param Queue *q, pointer to the appropriate queue
  * @return the process removed, or NULL in error
  */
 Process dequeue(Queue *q) {
@@ -186,6 +190,8 @@ Process dequeue(Queue *q) {
  * Removes the process(es) from the queue with the
  * given pid
  * @param pid the pid of the process(es) to be deleted
+ * @param Queue *q, pointer to the appropriate ready queue
+ * @return The removed Process
  */
 Process target(int pid, Queue *q) {
     Node trav = q->head;
@@ -240,6 +246,7 @@ Process target(int pid, Queue *q) {
 
 /**
  * Determines whether or not the queue is empty
+ * @param Queue *q, pointer to the appropriate queue
  * @return true if the queue is empty, false otherwise
  */
 bool isEmpty(Queue *q) {
@@ -252,6 +259,7 @@ bool isEmpty(Queue *q) {
 
 /**
  * Determines whether or not the queue is full
+ * @param Queue *q, pointer to the appropriate queue
  * @return true if the queue is full, false otherwise
  */
 bool isFull(Queue *q) {
@@ -262,6 +270,7 @@ bool isFull(Queue *q) {
 
 /**
  * Removes all items from the queue
+ * @param Queue *q, pointer to the appropriate queue
  */
 void clear(Queue *q) {
     Node trav = q->head;
@@ -282,6 +291,7 @@ void clear(Queue *q) {
 
 /**
  * Displays the processes in the queue
+ * @param Queue *q, pointer to the appropriate queue
  */
 void listQueue(Queue *q) {
     Node trav = q->head;

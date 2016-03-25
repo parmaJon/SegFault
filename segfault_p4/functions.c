@@ -17,14 +17,16 @@
 #include "functions.h"
 
 /**
- * recieves a message from the running state and handles it
+ * Implements the scheduling logic for Round Robin.  This will place
+ * jobs into the ready queue, preempt a running job, and set a new running 
+ * job as necessary.
  * @param Process running, the currently executing process
  * @param Process new, a newely arrived process
- * @param int timeRemaining, time left in execution of running
- * @param Queue queue, the process queue
- * @return the process removed, or NULL in error
+ * @param int timeRemaining, time left in execution of the running process
+ * @param Queue ready, the process queue
+ * @return The scheduled running process
  */
-Process roundRobin(Process running, Process new, int timeRemaining, Queue *queue)
+Process roundRobin(Process running, Process new, int timeRemaining, Queue *ready)
 {
     //if we need to cycle running to end of queue
     if(timeRemaining < 1)
@@ -38,15 +40,15 @@ Process roundRobin(Process running, Process new, int timeRemaining, Queue *queue
             }
             if(running->burst_time > 0)
             {
-                enqueue(running, queue);
-                return dequeue(queue);
+                enqueue(running, ready);
+                return dequeue(ready);
             }
             
-            else if(queue->size > 0)
+            else if(ready->size > 0)
             {
                 printf(" process %d finished\n", running->pid);
                 free(running);
-                return dequeue(queue);
+                return dequeue(ready);
             }    
             else
             {
@@ -63,18 +65,18 @@ Process roundRobin(Process running, Process new, int timeRemaining, Queue *queue
                 return new;
             }
             
-            enqueue(new, queue);
+            enqueue(new, ready);
             if(running->burst_time > 0)
             {
-                enqueue(running, queue);
-                return dequeue(queue);
+                enqueue(running, ready);
+                return dequeue(ready);
             }
             
             else
             {
                 printf(" process %d finished\n", running->pid);
                 free(running);
-                return dequeue(queue);
+                return dequeue(ready);
             }    
         }
         
@@ -88,21 +90,21 @@ Process roundRobin(Process running, Process new, int timeRemaining, Queue *queue
         
         //if we got a new process
         else
-            enqueue(new, queue);
+            enqueue(new, ready);
         
         return running;
     }
 }
 
 
-/**this may be easier to implement as a default of main instead of a new function
-*this process implements firstcome-first served for the queue of processes, queues a new one
-* if needed, dequeues the running process if last needed cycle
-* @param Process running, the currently executing process
+/**
+ * This process implements firstcome-first served for the queue of processes, queues a new one
+ * if needed, dequeues the running process if burst time has elapsed
+ * @param Process running, the currently executing process
  * @param Process new, a newely arrived process
  * @param int timeRemaining, time left in execution of running
  * @return the finished process if finished, else NULL if process needs more time
-*/
+ */
 Process fcfs(Process running, Process new, int timeRemaining, Queue *queue)
 {
 /*  //if no new process recieved
@@ -139,11 +141,19 @@ Process fcfs(Process running, Process new, int timeRemaining, Queue *queue)
     else
         return running;
 
-  //}
 }
 
 
-
+/**
+ * Implements the scheduling logic for Shortest Remaining Time First.  This will 
+ * place jobs into the ready queue, preempt a running job, and set a new running 
+ * job as necessary.
+ * @param Process running, the currently executing process
+ * @param Process new, a newely arrived process
+ * @param int timeRemaining, time left in execution of the running process
+ * @param Queue ready, the process queue
+ * @return The scheduled running process
+ */
 Process srtf(Process running, Process new, int timeRemaining, Queue *ready)
 {
   //if no new processes

@@ -49,6 +49,7 @@ int main(int argc, char *argv[]) {
 
     int i;
     char buf[256];
+    char s[256];
     char *tok;
     FILE *in;
     Queue ready;
