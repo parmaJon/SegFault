@@ -47,7 +47,9 @@ int isNum(char *str) {
 int main(int argc, char *argv[]) {
 
     int i;
-    char buf[33];
+    char buf[256];
+    char s[256];
+    char *tok;
     FILE *in;
     Queue ready;
     Queue toArrive;
@@ -128,11 +130,38 @@ int main(int argc, char *argv[]) {
 
 
     /* Read input file */
+    
+    
     while(1) {
-        break;
-        //tokenize buffer based on spaces
-        //put into toArrive queue sorted on arrival time
+//tokenize buffer based on spaces
+	while(fgets(buf, 256, in)){
+		i = 0;
+		Process working = malloc(sizeof(struct process));
+		strcpy(s,buf);
+		tok = strtok(s, " ");
+		while(tok){
+//put into toArrive queue sorted on arrival time
+		    atoi(tok);
+		    if(i%3 == 0){
+			working.pid = tok;
+		    else if(i%3 == 1){
+			working.arrival_time = tok;
+		    else if(i%3 == 2){
+			working.burst_time = tok;
+		    else
+			printf("error in process construction");
+		    tok = strtok(NULL, " ");
+		    i++;
+		}
+		working.response = 0;
+		enqueueArrival(working, toArrive);  //enqueues the process once built
+	}       
+	
+	break;
     }
+
+   fclose(in);
+
 
     Process running = NULL;
     int timeStamp = 0;
