@@ -1,30 +1,26 @@
 /******************************************************
  * Filename: ReadMe
  *
- * Description: documentation for project3
+ * Description: documentation for project4
  *
  * Group: SegFault
  * Authors: Lucas Stuyvesant, Garrett Ransom,
  *     Jonathan Brandt, Travis Nordquist
  * Class: CSE 325
  * Instructor: Zheng
- * Assignment: Lab Project #3
- * Assigned: Feb. 19, 2016
- * Due: March 4, 2016
+ * Assignment: Lab Project #4
+ * Assigned: March 4,2016
+ * Due: March 25, 2016
 ******************************************************/
 
-Description/Goals: The goal of this third project is to demonstrate understanding of implementing threads and synchronization techniques.  We have simulated the synchronization of two sets of threads.  The first set are producers which add mock data-sets to an established queue.  The producers wait a random time then carry out their duty of adding to the queue.  The consumers are assigned a retrieve method of either FIFO, Random, or Targeted.  Using mutex locks and semaphores, the threads interact with the queue one at a time, waiting for the queue to become free before adding or removing a data.  
+Description/Goals: The fourth project has the primary goal of simulating the process scheduling of an OS.  It allows for the choice of three different scheduling algorithms: first-come first-served, Shortest remaining Job first, and round robin.  The user provides a file of input containing the list of processes with their burst times and arrive times. The user chooses the desired scheduling algorithm and a time-quantum when needed.  The program then simulates each of the processes arriving, running, and waiting for new arrivals, ending with a quick printed analysis of average waiting time, average response time, average turnaround time, and the CPU utilization.
 
 
-Implementation:  The queue implemented is an adapted version of the queue system created in project 2.  It has been modified to queue only integers instead of the process structures that were originally used.  The 3 POSIX semaphores are then created and used for communication between the threads to determine the queue as full, empty and in-use(mutex).  The threads are then created, with the IDs stored in an array.  A new thread is created using pthreads, producers before consumers.  The producers wait a random(using rand()) time before beginning to add to the queue.  The consumers are then created and pull from the queue, as available, using FIFO, Random, or Targeted dequeueing, depending on the assigned method by the user.  This carrys on for 300 seconds, after which, the threads are all terminated and finally the main function terminates and the program exits. The threads print when they push or pull from the queue, displaying the contents of the queue after.  The queue is structured by a doubly linked list of nodes, where each node contains an int. The queue is initialized as empty. 
+Implementation:  The implementation of this program involves many aspects of the second project.  The queues used in project two have been modified to fit the data bits from the input file.  the Process sets have also been modified to hold PID, arrival time, burst time and a flag for internal use of response.  We used a couple of different queues to store the list of processes to be fed to the Ready-queue once the arrival time has come.  The two queues (toArrive and Ready) work in conjunction for the processes which still need to complete their cycles. The program then cycles one time unit at a time, designating and handling new processes, currently running processes, and processes waiting, all based upon the scheduling algorithm designated by the user.     
  
 
 
-Testing Results:  Testing involved all group members, beginning first by testing each component separately.  Several cases were tested, starting with base case of 1 producer, 1 consumer, and ending with the max number of 9 producers and 9 consumers.  
-
-Testing began with main waiting only a short time (3 seconds) in order to quickly find the more apparent bugs and issues within the program.  As those bugs were corrected and sorted, longer times were tested, with fuller extent of test cases for broader coverage.  
-
-The latter testing focused on minimizing memory leaks and producing non-erroneous output.
+Testing Results: Testing involved testing sets of many varying sizes, starting with small, quick and in order lists of processes, working up to larger, out of order lists to ensure quick testing.  Once the program compiled and ran without segfaults or errors, we began checking accuracy of the algorithms.  We started with first-come first-served since it was easiest to determine if execution order was correct and thus the simulated CPU usage was accurate.  Once the few kinks were sorted, we moved to SJF, then round robin.  To test the scheduling of these, we had a by hand copy of the order in which the processes should arrive, begin executing, and finish execution.  We compared these hand copies to the output of the program and worked the small ordering issues as they were found.  Once we determined order and timing was correct for all three algorithms, we tested that the statistics were calculated correctly by the program.  The only issue we found with these stats were in CPU usage, which we easily corrected upon realizing our calculation formula was wrong.  With varying size and ordering of the input files, we found no issues with our program. 
 
 Bugs:
 
@@ -32,4 +28,3 @@ No known bugs to report
 
 Additional Notes:
 
-The choice was made to not initialize the queue with -1's. This choice was made to better simulate a real queue, while maintaining the limit on the size of the queue at all times
