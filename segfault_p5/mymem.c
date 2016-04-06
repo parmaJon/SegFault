@@ -10,17 +10,17 @@
  * You may change this to fit your implementation.
  */
 
-struct memoryList
+typedef struct memoryElement
 {
   // doubly-linked list
-  struct memoryList *last;
-  struct memoryList *next;
+  struct memoryElement *prev;
+  struct memoryElement *next;
 
   int size;            // How many bytes in this block?
   char alloc;          // 1 if this block is allocated,
                        // 0 if this block is free.
   void *ptr;           // location of block in memory pool.
-};
+}*memoryElement;
 
 strategies myStrategy = NotSet;    // Current strategy
 
@@ -28,8 +28,9 @@ strategies myStrategy = NotSet;    // Current strategy
 size_t mySize;
 void *myMemory = NULL;
 
-static struct memoryList *head;
-static struct memoryList *next;
+static struct memoryElement *head;
+static struct memoryElement *tail;
+static struct memoryElement *next;
 
 
 /* initmem must be called prior to mymalloc and myfree.
@@ -55,12 +56,22 @@ void initmem(strategies strategy, size_t sz)
 
 	if (myMemory != NULL) free(myMemory); /* in case this is not the first time initmem2 is called */
 
-	/* TODO: release any other memory you were using for bookkeeping when doing a re-initialization! */
+	/*TODO cleanup of allocated memory*/
 
+	while(head!=NULL)
+	{
+		tail = head;
+		head = head->next;
+		free(tail);
+	}
 
 	myMemory = malloc(sz);
 	
-	/* TODO: Initialize memory management structure. */
+	head = malloc(sizeof(struct memoryElement));
+	tail = head;
+	head->size = sz;
+	head->alloc = 0;
+	head->ptr = myMemory;
 
 
 }
@@ -73,20 +84,234 @@ void initmem(strategies strategy, size_t sz)
 
 void *mymalloc(size_t requested)
 {
+	if(requested < 1)
+		return NULL; //done messed up
+		
 	assert((int)myStrategy > 0);
+	
+	memoryElement trav = head;
+	
+	memoryElement newElement = malloc(sizeof(struct memoryElement));
+	newElement->size = requested;
+	newElement->alloc = 1;
 	
 	switch (myStrategy)
 	  {
-	  case NotSet: 
+	  case NotSet:
+	  			free(newElement);
 	            return NULL;
+	            
 	  case First:
+	  			//traversal to first of proper size
+	  			while(trav != NULL)
+	  			{
+	  				if(trav->alloc == 0)
+	  				{
+	  					if(trav->size >= requested)
+	  					{
+	  						if(trav->prev != NULL)
+	  							trav->prev->next = newElement;
+	  						else
+	  							head = newElement;
+	  							
+	  						trav->size = trav->size - requested;
+	  						newElement->next = trav;
+	  						newElement->prev = trav->prev;
+	  						trav->prev = newElement;
+	  						newElement->ptr = trav->ptr;
+	  						trav->ptr = trav->ptr + requested;
+	  						
+	  						if(trav->size == 0)
+	  						{
+	  							if(trav == tail)
+	  								tail = newElement;
+	  							else
+	  								trav->next->prev = newElement;
+	  							
+	  							newElement->next = trav->next;
+	  							free(trav);
+	  						}
+	  						return newElement->ptr;
+	  					}	
+	  				}
+	  				trav = trav->next;
+	  			}
 	            return NULL;
+	            
 	  case Best:
-	            return NULL;
+	  			//find the smallest with enough size
+	  			
+	  			struct memoryElement* best = NULL;
+	  			
+	  			while(trav != NULL)
+	  			{
+	  				if(trav->alloc == 0)
+	  				{
+	  					if(trav->size >= requested)
+	  					{
+	  						if(best == NULL || trav->size < best->size)
+	  							best = trav;
+	  					}	
+	  				}
+	  				trav = trav->next;
+	  			}
+	  			
+	  			if(best == NULL)
+	  				return NULL;
+	  				
+	  				
+	  			if(best->prev != NULL)
+					best->prev->next = newElement;
+				else
+					head = newElement;
+					
+				best->size = best->size - requested;
+				newElement->next = best;
+				newElement->prev = best->prev;
+				best->prev = newElement;
+				newElement->ptr = best->ptr;
+				best->ptr = best->ptr + requested;
+				
+				if(best->size == 0)
+				{
+					if(best == tail)
+						tail = newElement;
+					else
+						best->next->prev = newElement;
+					
+					newElement->next = best->next;
+					free(best);
+				}
+				return newElement->ptr;
+	  			
 	  case Worst:
-	            return NULL;
+	  			//find the largest with enough size
+	  			
+	  			struct memoryElement* worst = NULL;
+	  			
+	  			while(trav != NULL)
+	  			{
+	  				if(trav->alloc == 0)
+	  				{
+	  					if(trav->size >= requested)
+	  					{
+	  						if(worst == NULL || trav->size > worst->size)
+	  							worst = trav;
+	  					}	
+	  				}
+	  				trav = trav->next;
+	  			}
+	  			
+	  			if(worst == NULL)
+	  				return NULL;
+	  				
+	  				
+	  			if(worst->prev != NULL)
+					worst->prev->next = newElement;
+				else
+					head = newElement;
+					
+				worst->size = worst->size - requested;
+				newElement->next = worst;
+				newElement->prev = worst->prev;
+				worst->prev = newElement;
+				newElement->ptr = worst->ptr;
+				worst->ptr = worst->ptr + requested;
+				
+				if(worst->size == 0)
+				{
+					if(worst == tail)
+						tail = newElement;
+					else
+						worst->next->prev = newElement;
+					
+					newElement->next = worst->next;
+					free(worst);
+				}
+				return newElement->ptr;
+
 	  case Next:
+	  			//repeat fist but start at next
+	  			trav = next;
+	  			
+	  			if(trav->alloc == 0)
+  				{
+  					if(trav->size >= requested)
+  					{
+  						if(trav->prev != NULL)
+  							trav->prev->next = newElement;
+  						else
+  							head = newElement;
+  							
+  						trav->size = trav->size - requested;
+  						newElement->next = trav;
+  						newElement->prev = trav->prev;
+  						trav->prev = newElement;
+  						newElement->ptr = trav->ptr;
+  						trav->ptr = trav->ptr + requested;
+  						
+  						if(trav->size == 0)
+  						{
+  							if(trav == tail)
+  								tail = newElement;
+  							else
+  								trav->next->prev = newElement;
+  							
+  							newElement->next = trav->next;
+  							free(trav);
+  						}
+  						next = newElement->next;
+  						return newElement->ptr;
+  					}	
+  				}
+	  			
+	  			trav = trav->next;
+	  			
+	  			if(trav == NULL)
+	  				trav = head;
+	  			
+	  			while(trav != next)
+	  			{
+	  				if(trav->alloc == 0)
+	  				{
+	  					if(trav->size >= requested)
+	  					{
+	  						if(trav->prev != NULL)
+	  							trav->prev->next = newElement;
+	  						else
+	  							head = newElement;
+	  							
+	  						trav->size = trav->size - requested;
+	  						newElement->next = trav;
+	  						newElement->prev = trav->prev;
+	  						trav->prev = newElement;
+	  						newElement->ptr = trav->ptr;
+	  						trav->ptr = trav->ptr + requested;
+	  						
+	  						if(trav->size == 0)
+	  						{
+	  							if(trav == tail)
+	  								tail = newElement;
+	  							else
+	  								trav->next->prev = newElement;
+	  							
+	  							newElement->next = trav->next;
+	  							free(trav);
+	  						}
+	  						next = newElement->next;
+	  						return newElement->ptr;
+	  					}	
+	  				}
+	  				
+	  				trav = trav->next;
+	  				
+	  				if(trav == NULL)
+	  					trav = head;
+	  				
+	  			}
+	  			
 	            return NULL;
+	            
 	  }
 	return NULL;
 }
