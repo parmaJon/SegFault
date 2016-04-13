@@ -90,6 +90,8 @@ void *mymalloc(size_t requested)
 	assert((int)myStrategy > 0);
 	
 	memoryElement trav = head;
+	memoryElement best = NULL;
+	memoryElement worst = NULL;
 	
 	memoryElement newElement = malloc(sizeof(struct memoryElement));
 	newElement->size = requested;
@@ -140,9 +142,7 @@ void *mymalloc(size_t requested)
 	            
 	  case Best:
 	  			//find the smallest with enough size
-	  			
-	  			struct memoryElement* best = NULL;
-	  			
+
 	  			while(trav != NULL)
 	  			{
 	  				if(trav->alloc == 0)
@@ -186,8 +186,6 @@ void *mymalloc(size_t requested)
 	  			
 	  case Worst:
 	  			//find the largest with enough size
-	  			
-	  			struct memoryElement* worst = NULL;
 	  			
 	  			while(trav != NULL)
 	  			{
@@ -320,6 +318,76 @@ void *mymalloc(size_t requested)
 /* Frees a block of memory previously allocated by mymalloc. */
 void myfree(void* block)
 {
+	//free a block thats in use
+	if(head == NULL)
+		return;
+	
+	memoryElement trav = head;
+	memoryElement temp = NULL;
+	
+	//finds our block
+	while(trav != NULL && !(trav->ptr <= block && block <= trav->ptr + trav->size))
+	{
+		trav = trav->next;
+	}
+	
+	//if block is never found in the memory
+	if(trav == NULL)
+		return;
+	
+	temp = trav;
+	
+	//if prev element exists and is not alloced
+	if(temp->prev != NULL && temp->prev->alloc == 0)
+	{
+		//do prep to free temp
+		temp->prev->next = temp->next;
+		
+		//if there is an element after temp
+		if(temp->next != NULL)
+		{
+			temp->next->prev = temp->prev;
+			//if the next element needs to be freed
+			if(temp->next->alloc == 0)
+			{
+				//if the element is not the null
+				if(temp->next->next != NULL)
+					temp->next->next->prev = temp->prev;
+					
+				temp->prev->size += temp->next->size;
+				temp->prev->next = temp->next->next;
+				free(temp->next);
+			}
+		}
+		temp->prev->size += temp->size;
+		temp = temp->prev;
+		free(temp->next);
+	}
+	
+	//if next element exists and is not alloced
+	else if(temp->next != NULL && temp->prev->alloc == 0)
+	{	
+		//trav will be used for the next element
+		trav = temp -> next;
+		temp->next = temp->next->next;
+		
+		if(temp->next != NULL)
+			temp->next->prev = temp;
+		
+		temp->size += trav->size;
+		free(trav);
+		temp->alloc = 0;
+	}
+	
+	//else no other elements around this block are un alloced
+	else
+		temp->alloc = 0;
+	
+	if(temp->prev == NULL)
+		head = temp;
+	if(temp->next == NULL)
+		tail = temp;
+	
 	return;
 }
 
