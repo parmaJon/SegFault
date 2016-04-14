@@ -357,6 +357,9 @@ void myfree(void* block)
 		if(trav->next != NULL)
 			trav->next->prev = temp;
 
+		if(next == trav)
+			next = temp;
+
 		temp->size+=trav->size;
 		free(trav);
 		trav = temp;
@@ -372,6 +375,9 @@ void myfree(void* block)
 		temp->prev = trav->prev;
 		if(trav->prev != NULL)
 			trav->prev->next = temp;
+
+		if(next == trav)
+			next = temp;
 
 		temp->size+=trav->size;
 		free(trav);
