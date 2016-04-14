@@ -400,7 +400,14 @@ void myfree(void* block)
 /* Get the number of contiguous areas of free space in memory. */
 int mem_holes()
 {
-	return 0;
+	memoryElement trav = head;
+	int count = 0;
+
+	while(trav != NULL) {
+		if(trav->alloc == 0)
+			count++;
+	}
+	return count;
 }
 
 /* Get the number of bytes allocated */
