@@ -329,8 +329,9 @@ void myfree(void* block)
 	memoryElement temp = NULL;
 	
 	//finds our block
-	//while(trav != NULL && !(trav->ptr <= block && block <= (trav->ptr + trav->size)))
-	while(trav != NULL && trav->ptr != block)
+
+	//while(trav != NULL && trav->ptr != block)
+	while(trav != NULL && !(trav->ptr <= block && block < trav->ptr + trav->size))
 	{
 		trav = trav->next;
 	}
@@ -339,53 +340,31 @@ void myfree(void* block)
 	if(trav == NULL)
 		return;
 	
+	trav->alloc = FREED;
 	temp = trav;
 	
-	//if prev element exists and is not alloced
-	if(temp->prev != NULL && temp->prev->alloc == FREED)
+	//if prev element exists and is not allocated
+	if(trav->prev != NULL  &&  trav->prev->alloc == FREED)
 	{
-		//do prep to free temp
-		temp->prev->next = temp->next;
-		
-		//if there is an element after temp
-		if(temp->next != NULL)
-		{
-			temp->next->prev = temp->prev;
-			//if the next element needs to be freed
-			if(temp->next->alloc == FREED)
-			{
-				//if the element is not the null
-				if(temp->next->next != NULL)
-					temp->next->next->prev = temp->prev;
-					
-				temp->prev->size += temp->next->size;
-				temp->prev->next = temp->next->next;
-				free(temp->next);
-			}
-		}
-		temp->prev->size += temp->size;
-		temp = temp->prev;
-		free(temp->next);
-	}
-	
-	//if next element exists and is not alloced
-	else if(temp->next != NULL && temp->next->alloc == FREED)
-	{	
-		//trav will be used for the next element
-		trav = temp -> next;
-		temp->next = temp->next->next;
-		
-		if(temp->next != NULL)
-			temp->next->prev = temp;
-		
-		temp->size += trav->size;
+		//combine previous and current holes
+		trav->prev->next = trav->next;
+		temp = trav->prev;
+		temp->size+=trav->size;
 		free(trav);
-		temp->alloc = FREED;
+		trav = temp;
+		
 	}
 	
-	//else no other elements around this block are un alloced
-	else
-		temp->alloc = FREED;
+	//if next element exists and is not allocated
+	if(trav->next != NULL && trav->next->alloc == FREED)
+	{	
+		//combine next and current holes
+		trav->next->prev = trav->prev;
+		temp = trav->next;
+		temp->size+=trav->size;
+		free(trav);
+		trav = temp;
+	}
 	
 	//check for head and tail values
 	if(temp->prev == NULL)
@@ -410,8 +389,8 @@ int mem_holes()
 
 	while(trav != NULL) {
 		if(trav->alloc == FREED)
-			count++;
-		trav=trav->next;
+			count++;	
+		trav = trav->next;
 	}
 	return count;
 }
