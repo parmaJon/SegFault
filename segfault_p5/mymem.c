@@ -100,8 +100,8 @@ void *mymalloc(size_t requested)
 	switch (myStrategy)
 	  {
 	  case NotSet:
-	  			free(newElement);
-	            return NULL;
+	  	free(newElement);
+		return NULL;
 	            
 	  case First:
 	  			//traversal to first of proper size
@@ -458,6 +458,13 @@ int mem_small_free(int size)
 
 char mem_is_alloc(void *ptr)
 {
+	memoryElement trav = head;
+
+	while(trav != NULL) {
+		if( ptr >= trav->ptr  &&  ptr < trav->ptr+trav->size )
+			return 1;
+	}
+
         return 0;
 }
 
