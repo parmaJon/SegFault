@@ -75,7 +75,8 @@ void initmem(strategies strategy, size_t sz)
 	head->size = sz;
 	head->alloc = FREED;
 	head->ptr = myMemory;
-
+	head->next = NULL;
+	head->prev = NULL;
 
 }
 
@@ -234,6 +235,9 @@ void *mymalloc(size_t requested)
 	  case Next:
 	  			//repeat fist but start at next
 	  			trav = next;
+
+				if(trav == NULL)
+	  				trav = head;
 	  			
 	  			if(trav->alloc == FREED)
   				{
@@ -268,11 +272,13 @@ void *mymalloc(size_t requested)
 	  			
 	  			trav = trav->next;
 	  			
-	  			if(trav == NULL)
-	  				trav = head;
 	  			
 	  			while(trav != next)
 	  			{
+
+	  				if(trav == NULL)
+	  					trav = head;
+
 	  				if(trav->alloc == FREED)
 	  				{
 	  					if(trav->size >= requested)
@@ -306,8 +312,6 @@ void *mymalloc(size_t requested)
 	  				
 	  				trav = trav->next;
 	  				
-	  				if(trav == NULL)
-	  					trav = head;
 	  				
 	  			}
 	  			
@@ -344,9 +348,13 @@ void myfree(void* block)
 	//if prev element exists and is not allocated
 	if(trav->prev != NULL  &&  trav->prev->alloc == FREED)
 	{
-		//combine previous and current holes
-		trav->prev->next = trav->next;
 		temp = trav->prev;
+
+		//combine previous and current holes
+		temp->next = trav->next;
+		if(trav->next != NULL)
+			trav->next->prev = temp;
+
 		temp->size+=trav->size;
 		free(trav);
 		trav = temp;
@@ -356,9 +364,13 @@ void myfree(void* block)
 	//if next element exists and is not allocated
 	if(trav->next != NULL && trav->next->alloc == FREED)
 	{	
-		//combine next and current holes
-		trav->next->prev = trav->prev;
 		temp = trav->next;
+
+		//combine next and current holes
+		temp->prev = trav->prev;
+		if(trav->prev != NULL)
+			trav->prev->next = temp;
+
 		temp->size+=trav->size;
 		free(trav);
 		trav = temp;
@@ -443,9 +455,9 @@ int mem_largest_free()
 			if (tmp->alloc == FREED) //if free
 			{
 				if (tmp->size > max_size)
-                {
+                		{
 					max_size = tmp->size;
-                }
+				}
 			}
 			tmp = tmp->next;
 		}
@@ -471,8 +483,8 @@ int mem_small_free(int size)
 		{
 			if((tmp->alloc == FREED) && (tmp->size <= size)) //if free and smaller or equal to block size
 			{
-                num++;
-            }
+				num++;
+			}
             
 			tmp = tmp->next;
 		}
