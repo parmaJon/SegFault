@@ -421,9 +421,20 @@ int mem_allocated()
 }
 
 /* Number of non-allocated bytes */
+/* Functions same as mem_allocated except counts blocks marked free */
 int mem_free()
 {
-	return 0;
+    struct memoryElement *check = head;
+    int free = 0;
+
+    while(check){
+        if(check->alloc == '0'){
+	free = free + (check->size);
+	}
+	check = check->next;
+    }
+
+    return free;
 }
 
 /* Number of bytes in the largest contiguous area of unallocated memory */
