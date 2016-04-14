@@ -236,8 +236,8 @@ void *mymalloc(size_t requested)
 	  			//repeat fist but start at next
 	  			trav = next;
 
-				if(trav == NULL)
-	  				trav = head;
+					//printf("Start : next = %d\n",next->size);
+
 	  			
 	  			if(trav->alloc == FREED)
   				{
@@ -266,19 +266,21 @@ void *mymalloc(size_t requested)
   							free(trav);
   						}
   						next = newElement->next;
+
+						if( next == NULL )
+							next = head;
+
   						return newElement->ptr;
   					}	
   				}
 	  			
 	  			trav = trav->next;
-	  			
+
+	  			if(trav == NULL)
+	  				trav = head;
 	  			
 	  			while(trav != next)
 	  			{
-
-	  				if(trav == NULL)
-	  					trav = head;
-
 	  				if(trav->alloc == FREED)
 	  				{
 	  					if(trav->size >= requested)
@@ -306,18 +308,23 @@ void *mymalloc(size_t requested)
 	  							free(trav);
 	  						}
 	  						next = newElement->next;
+
+							if( next == NULL )
+								next = head;
+
 	  						return newElement->ptr;
 	  					}	
 	  				}
 	  				
 	  				trav = trav->next;
-	  				
-	  				
+
+	  				if(trav == NULL)
+	  					trav = head;
 	  			}
 	  			
-	            return NULL;
+				return NULL;
 	            
-	  }
+	}
 	return NULL;
 }
 
