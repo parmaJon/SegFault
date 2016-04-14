@@ -5,6 +5,8 @@
 #include "mymem.h"
 #include <time.h>
 
+#define ALLOCATED 1
+#define FREED 0
 
 /* The main structure for implementing memory allocation.
  * You may change this to fit your implementation.
@@ -12,14 +14,14 @@
 
 typedef struct memoryElement
 {
-  // doubly-linked list
-  struct memoryElement *prev;
-  struct memoryElement *next;
+    // doubly-linked list
+    struct memoryElement *prev;
+    struct memoryElement *next;
 
-  int size;            // How many bytes in this block?
-  char alloc;          // 1 if this block is allocated,
+    int size;            // How many bytes in this block?
+    char alloc;          // 1 if this block is allocated,
                        // 0 if this block is free.
-  void *ptr;           // location of block in memory pool.
+    void *ptr;           // location of block in memory pool.
 }*memoryElement;
 
 strategies myStrategy = NotSet;    // Current strategy
@@ -70,7 +72,7 @@ void initmem(strategies strategy, size_t sz)
 	head = malloc(sizeof(struct memoryElement));
 	tail = head;
 	head->size = sz;
-	head->alloc = 0;
+	head->alloc = FREED;
 	head->ptr = myMemory;
 
 
@@ -95,7 +97,7 @@ void *mymalloc(size_t requested)
 	
 	memoryElement newElement = malloc(sizeof(struct memoryElement));
 	newElement->size = requested;
-	newElement->alloc = 1;
+	newElement->alloc = ALLOCATED;
 	
 	switch (myStrategy)
 	  {
@@ -107,7 +109,7 @@ void *mymalloc(size_t requested)
 	  			//traversal to first of proper size
 	  			while(trav != NULL)
 	  			{
-	  				if(trav->alloc == 0)
+	  				if(trav->alloc == FREED)
 	  				{
 	  					if(trav->size >= requested)
 	  					{
@@ -145,7 +147,7 @@ void *mymalloc(size_t requested)
 
 	  			while(trav != NULL)
 	  			{
-	  				if(trav->alloc == 0)
+	  				if(trav->alloc == FREED)
 	  				{
 	  					if(trav->size >= requested)
 	  					{
@@ -189,7 +191,7 @@ void *mymalloc(size_t requested)
 	  			
 	  			while(trav != NULL)
 	  			{
-	  				if(trav->alloc == 0)
+	  				if(trav->alloc == FREED)
 	  				{
 	  					if(trav->size >= requested)
 	  					{
@@ -232,7 +234,7 @@ void *mymalloc(size_t requested)
 	  			//repeat fist but start at next
 	  			trav = next;
 	  			
-	  			if(trav->alloc == 0)
+	  			if(trav->alloc == FREED)
   				{
   					if(trav->size >= requested)
   					{
@@ -270,7 +272,7 @@ void *mymalloc(size_t requested)
 	  			
 	  			while(trav != next)
 	  			{
-	  				if(trav->alloc == 0)
+	  				if(trav->alloc == FREED)
 	  				{
 	  					if(trav->size >= requested)
 	  					{
@@ -338,7 +340,7 @@ void myfree(void* block)
 	temp = trav;
 	
 	//if prev element exists and is not alloced
-	if(temp->prev != NULL && temp->prev->alloc == 0)
+	if(temp->prev != NULL && temp->prev->alloc == FREED)
 	{
 		//do prep to free temp
 		temp->prev->next = temp->next;
@@ -348,7 +350,7 @@ void myfree(void* block)
 		{
 			temp->next->prev = temp->prev;
 			//if the next element needs to be freed
-			if(temp->next->alloc == 0)
+			if(temp->next->alloc == FREED)
 			{
 				//if the element is not the null
 				if(temp->next->next != NULL)
@@ -365,7 +367,7 @@ void myfree(void* block)
 	}
 	
 	//if next element exists and is not alloced
-	else if(temp->next != NULL && temp->prev->alloc == 0)
+	else if(temp->next != NULL && temp->prev->alloc == FREED)
 	{	
 		//trav will be used for the next element
 		trav = temp -> next;
@@ -376,12 +378,12 @@ void myfree(void* block)
 		
 		temp->size += trav->size;
 		free(trav);
-		temp->alloc = 0;
+		temp->alloc = FREED;
 	}
 	
 	//else no other elements around this block are un alloced
 	else
-		temp->alloc = 0;
+		temp->alloc = FREED;
 	
 	if(temp->prev == NULL)
 		head = temp;
@@ -404,7 +406,7 @@ int mem_holes()
 	int count = 0;
 
 	while(trav != NULL) {
-		if(trav->alloc == 0)
+		if(trav->alloc == FREED)
 			count++;
 	}
 	return count;
@@ -418,10 +420,10 @@ int mem_allocated()
 
     while(check){ //loops through memlist blocks
 
-	if(check->alloc == '1'){   //checks if current block is allocated
-	allocated = allocated + (check->size);  //adds the allocated block's size
-	}
-	check = check->next;
+        if(check->alloc == ALLOCATED){   //checks if current block is allocated
+            allocated = allocated + (check->size);  //adds the allocated block's size
+        }
+        check = check->next;
     }
 
     return allocated;
@@ -435,10 +437,10 @@ int mem_free()
     int free = 0;
 
     while(check){
-        if(check->alloc == '0'){
-	free = free + (check->size);
-	}
-	check = check->next;
+        if(check->alloc == FREED){
+            free = free + (check->size);
+        }
+        check = check->next;
     }
 
     return free;
@@ -447,13 +449,57 @@ int mem_free()
 /* Number of bytes in the largest contiguous area of unallocated memory */
 int mem_largest_free()
 {
-	return 0;
+	int max_size = 0;
+    
+	struct memoryElement *tmp = NULL;
+    
+	if (head != NULL)
+	{
+		tmp = head;
+		while (tmp != NULL)
+		{
+			if (tmp->alloc == FREED) //if free
+			{
+				if (tmp->size > max_size)
+                {
+					max_size = tmp->size;
+                }
+			}
+			tmp = tmp->next;
+		}
+	}
+	else
+	{
+		printf("ERROR: Error in mem_largest_free, head is NULL\n");
+	}
+	return max_size;
 }
 
 /* Number of free blocks smaller than "size" bytes. */
 int mem_small_free(int size)
 {
-	return 0;
+	int num = 0;
+
+	struct memoryElement *tmp = NULL;
+    
+	if (head != NULL)
+	{
+		tmp = head;
+		while (tmp != NULL)
+		{
+			if((tmp->alloc == FREED) && (tmp->size <= size)) //if free and smaller or equal to block size
+			{
+                num++;
+            }
+            
+			tmp = tmp->next;
+		}
+	}
+	else
+	{
+		printf("ERROR: Error in mem_small_free, head is NULL\n");
+	}
+	return num;
 }       
 
 char mem_is_alloc(void *ptr)
