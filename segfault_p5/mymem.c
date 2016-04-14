@@ -406,7 +406,18 @@ int mem_holes()
 /* Get the number of bytes allocated */
 int mem_allocated()
 {
-	return 0;
+    struct memoryElement *check = head; //assigns the start of the memlist for checking
+    int allocated = 0;
+
+    while(check){ //loops through memlist blocks
+
+	if(check->alloc == '1'){   //checks if current block is allocated
+	allocated = allocated + (check->size);  //adds the allocated block's size
+	}
+	check = check->next;
+    }
+
+    return allocated;
 }
 
 /* Number of non-allocated bytes */
