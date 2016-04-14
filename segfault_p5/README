@@ -1,7 +1,7 @@
 /******************************************************
  * Filename: ReadMe
  *
- * Description: documentation for project4
+ * Description: documentation for project5
  *
  * Group: SegFault
  * Authors: Lucas Stuyvesant, Garrett Ransom,
@@ -14,13 +14,30 @@
 ******************************************************/
 
 Description/Goals: 
+The fifth project has the primary goal of simulating the memory managment
+of the OS. We allow for the choice of four different management stratagies.
+The first is "First" which finds the first available memory slot and puts the memory there.
+The second is "Best" which finds the smallest available block that can hold the new memory.
+The third is "worst" which find the worst block and puts the new memory there.
+The fourth is "next" which operates simmilarly to first, but it remembers where is left off and continues to try to put the new block in the next available slot.
 
 
+Implementation:
+The implementation of this project is fairly different from the previous projects.
+First we do not rely on a queue. We instead use a list which represents the blocks
+of memory that we use. We use a structure to handle the block information (containing pointers 
+fowards and backwards, the size of the block, if the block is alloced, and the ptr
+address to the block) and create and "blocks" as we need them. to run the program, command is of 
+the form "./mem -<test/try> <test> <stratagy>" all in lowercase  
+ 
 
-Implementation:   
 
-
-Testing Results: 
+Testing Results:
+Testing was done in a series of steps.
+First we did testing using -try flag and using our own test functions so we could get the 
+majority of the project working properly. Next we proceeded using -test, using the given test
+functions and checking the output. Using the output we were able to narrow down where the bugs lied
+and solve the issues.
 
 
 Bugs:
