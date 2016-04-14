@@ -71,7 +71,7 @@ void initmem(strategies strategy, size_t sz)
 	
 	head = malloc(sizeof(struct memoryElement));
 	tail = head;
-        next = head;
+	next = head;
 	head->size = sz;
 	head->alloc = FREED;
 	head->ptr = myMemory;
@@ -333,6 +333,8 @@ void myfree(void* block)
 	memoryElement temp = NULL;
 	
 	//finds our block
+
+	//while(trav != NULL && trav->ptr != block)
 	while(trav != NULL && !(trav->ptr <= block && block < trav->ptr + trav->size))
 	{
 		trav = trav->next;
@@ -376,12 +378,11 @@ void myfree(void* block)
 		trav = temp;
 	}
 	
-
-	
-	if(trav->prev == NULL)
-		head = trav;
-	if(trav->next == NULL)
-		tail = trav;
+	//check for head and tail values
+	if(temp->prev == NULL)
+		head = temp;
+	if(temp->next == NULL)
+		tail = temp;
 	
 	return;
 }
@@ -400,7 +401,7 @@ int mem_holes()
 
 	while(trav != NULL) {
 		if(trav->alloc == FREED)
-			count++;
+			count++;	
 		trav = trav->next;
 	}
 	return count;
@@ -584,6 +585,17 @@ strategies strategyFromString(char * strategy)
 /* Use this function to print out the current contents of memory. */
 void print_memory()
 {
+	memoryElement trav = head;
+	while(trav != NULL)
+	{
+		if(trav->alloc == 0)
+			printf("address %d contains %d of free mem\n", trav->ptr, trav->size);
+		else if(trav->alloc == 1)
+			printf("address %d contains %d of alloced mem\n", trav->ptr, trav->size);
+		else
+			printf("problems\n");
+		trav = trav->next;
+	}
 	return;
 }
 
@@ -603,28 +615,53 @@ void print_memory_status()
  * We have given you a simple example to start.
  */
 void try_mymem(int argc, char **argv) {
-        strategies strat;
+    strategies strat;
 	void *a, *b, *c, *d, *e;
 	if(argc > 1)
-	  strat = strategyFromString(argv[1]);
+	  myStrategy = strategyFromString(argv[1]);
 	else
-	  strat = First;
+	  myStrategy = First;
 	
+	if(myStrategy == 0)
+		myStrategy = First;
 	
+	printf("your startegy is %d\n",myStrategy);
 	/* A simple example.  
 	   Each algorithm should produce a different layout. */
 	
-	initmem(strat,500);
-	
+	initmem(myStrategy,500);
+	printf("after intiazation:   ");
+	print_memory();
+	printf("\n");
 	a = mymalloc(100);
+	printf("after first alloc:   ");
+	print_memory();
+	printf("\n");
 	b = mymalloc(100);
+	printf("after second alloc:  ");
+	print_memory();
+	printf("\n");
 	c = mymalloc(100);
+	printf("after third alloc:   ");
+	print_memory();
+	printf("\n");
 	myfree(b);
+	printf("after first free:    ");
+	print_memory();
+	printf("\n");
 	d = mymalloc(50);
+	printf("after fourth alloc:  ");
+	print_memory();
+	printf("\n");
 	myfree(a);
+	printf("after second free:   ");
+	print_memory();
+	printf("\n");
 	e = mymalloc(25);
+	printf("after fifth alloc:   ");
 	
 	print_memory();
+	printf("\n");
 	print_memory_status();
 	
 }
