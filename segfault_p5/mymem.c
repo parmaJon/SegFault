@@ -489,8 +489,13 @@ char mem_is_alloc(void *ptr)
 	memoryElement trav = head;
 
 	while(trav != NULL) {
-		if( ptr >= trav->ptr  &&  ptr < trav->ptr+trav->size )
-			return 1;
+		if( ptr >= trav->ptr  &&  ptr < trav->ptr+trav->size ) {
+			if( trav-> alloc == ALLOCATED )
+				return 1;
+			else
+				return 0;
+		}
+		trav = trav->next;
 	}
 
         return 0;
