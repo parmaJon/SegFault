@@ -348,6 +348,11 @@ void myfree(void* block)
 	{
 		//combine previous and current holes
 		trav->prev->next = trav->next;
+		//test this line
+		//adding this test block and the test block below stopped the hanging problem.
+		//they however have not caused things to work properly
+		trav->next->prev = trav->prev;
+		//end of test line
 		temp = trav->prev;
 		temp->size+=trav->size;
 		free(trav);
@@ -360,6 +365,9 @@ void myfree(void* block)
 	{	
 		//combine next and current holes
 		trav->next->prev = trav->prev;
+		//test this line
+		trav->prev->next = trav->next;
+		//end of test line
 		temp = trav->next;
 		temp->size+=trav->size;
 		free(trav);
