@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
@@ -70,15 +71,15 @@ int mount_fs(char *disk_name)
 	block_read(super->free1,(char *)free);
 	master->free = free;
 
-	
 	//top directory
 	master->dir = malloc(sizeof(struct directory));
 	block_read(super->dir,(char *)master->dir);
+  Directory dir = master->dir;
 	
 	//files
 	for(i = 0; i<64; i++)
 	{
-		dir->inodes[i] = malloc(sizeof(struct iNode));
+    dir->inodes[i] = malloc(sizeof(struct iNode));
 		block_read(super->inodes + (i*10),(char *)dir->inodes[i]);
 		dir->inodes[i]->data = malloc(sizeof(struct indexBlock));
 		block_read(super->inodes + 1 + (i*10),(char *)dir->inodes[i]->data);
@@ -91,16 +92,24 @@ int mount_fs(char *disk_name)
 			IndexBlockLayer2 ib = dir->inodes[i]->data->pointers[k]; //convenience var
 			
 			//file content
+      j=0;
 			bsize = (inode->size/BLOCK_SIZE)+1;
+      if( dir->inodes[i]->size % BLOCK_SIZE  ==  0 )
+        bsize--;
 			while( j < bsize ) {
-				inode->data->pointers[k]->pointers[j] = malloc(BLOCK_SIZE);
-				block_read(super->data + dataOffset,(char *)inode->data->pointers[k]->pointers[j]);
+				ib->pointers[j] = malloc(BLOCK_SIZE);
+				block_read(super->data + dataOffset,(char *)ib->pointers[j]);
 				j++;
+        dataOffset++;
 			}
-			dataOffset += bsize;
 		} 
 	}
-	
+
+  if( super->free != super->data + dataOffset) {
+    errno = 5;
+    perror("Read free offset inconsistent with data size!");
+  }
+
 	k = 0;
 		
 	//free index blocks (layer 2)
@@ -112,7 +121,6 @@ int mount_fs(char *disk_name)
 		j = 0;
 		while( k < BLOCK_SIZE  &&  j < (BLOCK_SIZE/8) ) {
 			free->pointers[i]->pointers[k%(BLOCK_SIZE/8)] = malloc(BLOCK_SIZE);
-			block_read(super->free + k,(char *)free->pointers[i]->pointers[k%(BLOCK_SIZE/8)]);
 			k++;
 			j++;
 		}
@@ -124,17 +132,8 @@ int mount_fs(char *disk_name)
 
 int unmount_fs(char *disk_name)
 {
-	int freespace = 0;
+	int k,j,bsize,dataOffset=0;
 
-	//super block
-	SuperBlock super = malloc(sizeof(struct superBlock));
-	super->master = 1;
-	super->free1 = 2;
-	super->free2 = 3;
-	super->dir = 11;
-	super->inodes = 12;
-	super->data = 652; //need to determine free offset
-	
 	//master control block
 	block_write(super->master,(char *)master);
 
@@ -146,54 +145,76 @@ int unmount_fs(char *disk_name)
 	}
 	
 	//free index block
-	IndexBlock free = master->free;
-	block_write(super->free1,(char *)free);
+	IndexBlock freeb = master->free;
+	block_write(super->free1,(char *)freeb);
 	
 	//free index blocks (layer 2)
 	for(i = 0; i<8; i++)
 	{
-		block_write(super->free2 + i,(char *)free->pointers[i]);
+		block_write(super->free2 + i,(char *)freeb->pointers[i]);
 	}
 	
 	//top directory
-	master->dir = malloc(sizeof(struct directory));
-	block_read(super->dir,(char *)master->dir);
-	
-	//files
+	block_write(super->dir,(char *)master->dir);
+	Directory dir = master->dir;
+
+
+
+	//inodes
 	for(i = 0; i<64; i++)
 	{
-		dir->inodes[i] = malloc(sizeof(struct iNode));
-		block_read(super->inodes + (i*10),(char *)dir->inodes[i]);
-		dir->inodes[i]->data = malloc(sizeof(struct indexBlock));
-		block_read(super->inodes + 1 + (i*10),(char *)dir->inodes[i]->data);
-		INode inode = dir->inodes[i]; //convenience var
+		block_write(super->inodes + (i*10),(char *)dir->inodes[i]);
+		block_write(super->inodes + 1 + (i*10),(char *)dir->inodes[i]->data);
 		
 		//inodes (layer 2)
 		for(k = 0; k<8; k++) {
-			dir->inodes[i]->data->pointers[k] = malloc(sizeof(struct indexBlockLayer2));
-			block_read(super->inodes + 2 + k + (i*10),(char *)dir->inodes[i]->data->pointers[k]);
+			block_write(super->inodes + 2 + k + (i*10),(char *)dir->inodes[i]->data->pointers[k]);
 			IndexBlockLayer2 ib = dir->inodes[i]->data->pointers[k]; //convenience var
 			
 			//file content
-			bsize = (inode->size/BLOCK_SIZE)+1;
+      j=0;
+			bsize = (dir->inodes[i]->size/BLOCK_SIZE)+1;
+      if( dir->inodes[i]->size % BLOCK_SIZE  ==  0 )
+        bsize--;
 			while( j < bsize ) {
-				inode->data->pointers[k]->pointers[j] = malloc(BLOCK_SIZE);
-				block_read(super->data + dataOffset,(char *)inode->data->pointers[k]->pointers[j]);
+				block_write(super->data + dataOffset,(char *)ib->pointers[j]);
+				free(ib->pointers[j]);
+        j++;
+        dataOffset++;
 			}
-			dataOffset += bsize;
+
+			free(dir->inodes[i]->data->pointers[k]);
 		} 
+
+		free(dir->inodes[i]->data);
+		free(dir->inodes[i]);
 	}
 	
+  if( super->free != super->data + dataOffset){
+    errno = 5;
+    perror("unmount:Data size is inconsistent with offset value!");
+  }
 	
 	free(master->dir);
-	
+
+  k=0;
 	//free layer 2 free index blocks
 	for(i = 0; i<8; i++)
 	{
-		free(free->pointers[i]);
+
+		j = 0;
+		while( k < BLOCK_SIZE - dataOffset  &&  j < (BLOCK_SIZE/8) ) {
+      void* buf = calloc(1,BLOCK_SIZE);
+			free(freeb->pointers[i]->pointers[j]);
+      block_write(super->free + k, (char *) buf);
+			k++;
+			j++;
+		}
+
+		free(freeb->pointers[i]);
 	}
 	
-	free(free);
+	free(freeb);
 	free(master);
 	
 	block_write(0,(char *)super);

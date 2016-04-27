@@ -28,7 +28,7 @@ typedef struct indexBlock{
 } *IndexBlock;
 
 typedef struct iNode{
-	char* name;
+	char name[64];
 	int size;
 	sem_t write, read;
 	IndexBlock data;
