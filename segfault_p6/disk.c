@@ -226,11 +226,138 @@ int unmount_fs(char *disk_name)
 	return 0;
 }	
 
+//write & open
 
+int fs_open(char *name)
+{
+	//check if file exists
+	int i = 0;
+	int test = 0;
+	//while we havent checked all files and names do not match
+	while(i < 64 && test == 0) 
+	{	
+		//TODO test for NULL file
+		if(master->dir->inodes[i]->name)
+			i++;//skip this "file"
+		else
+		{
+			if(strcmp(master->dir->inodes[i]->name, name) == 0) //found file
+				test = 1;
+			else	//didnt find file
+				i++;
+		}
+	}
+	
+	if(test == 0)
+		return -1;
+	
+	//otherwise we found file
+	//find a descriptor
+	int j = 0;
+	for(j = 0; j < 32; j++)
+	{
+		if(master->descriptors[j]->pointer == NULL) //found a empty descriptor at position j
+			break;
+	}
+	
+	if(j == 32)	//no descriptor found check
+		return -1;
+		
+	master->descriptors[j]->pointer = master->dir->inodes[i];
+	master->descriptors[j]->seek = 0;
+	return j; //returns the fd number
+}
 
+int fs_write(int fildes, void *buf, size_t nbyte)
+{
+	if(master->descriptors[fildes]->pointer == NULL)
+		return -1; //invalid descriptor
+		
+	//find our file
+	INode file = master->descriptors[fildes]->pointer;
+	int offset = master->descriptors[fildes]->seek;
+	
+	char buffer[sizeof(buf)];
+	strcpy(buffer, buf);
+	
+	//begin writing
+	int i = 0;
+	int j = 4096;
+	int freex = 8, freey = 512;
+	int usex = 0, usey = 0;
+	
+	//find the position of the fd (in the blocks)
+	int dec = offset;
+	while(dec > 0)
+	{
+		dec = dec - 4096;
+		if(dec > 0)
+		{
+			usey++;
+			if(usey == 512)
+			{
+				usey = 0;
+				usex++;
+				if(usex == 8) //only occurs if we are trying to write and the file already takes up the entire disk
+					return -1;
+			}
+		}
+	} 
 
-
-
+	int test = 1;
+	while(i < nbyte && test != 0)
+	{
+		//check if need new block
+		if(offset%4096 == 0)
+		{
+			while(j > 0)	//check if new block is available
+			{
+				if(master->free->pointers[freex-1]->pointers[freey-1] == NULL) //not pointing to a block
+				{
+					freey--;
+					if(freey == 0)
+					{
+						freey = 512;
+						freex--;
+						if(freex == 0)
+						{
+							test = 0;
+							break; //break the while loop
+						}
+					}
+				}
+				else //found a block that is available
+				{
+					usey++; //incrament block location
+					if(usey == 512)	//if we hit the end of this section
+					{
+						usey = 0;	
+						usex++;		
+						if(usex == 8)	//if we are out of space
+						{
+							test = 0;
+							break; //break the while loop
+						}
+					}
+				}
+			}
+			
+		}
+		//TODO check that im writing correctly
+		if(test != 0)
+		{
+			//strcpy((file->data->pointers[usex]->pointers[usey] + (offset%4096)), buffer[i]);
+			//copy single char to file->data->pointers[usex]->pointer[usey] + (offset%4096)
+			offset++;
+			i++;
+		}	
+	}	
+		
+	//cleanup
+	int written = offset - master->descriptors[fildes]->seek;
+	master->descriptors[fildes]->seek = offset;
+	return written;
+}
 
 
 

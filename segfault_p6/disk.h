@@ -57,6 +57,8 @@ int close_disk();              // close a previously opened disk (file)
 int make_fs(char *disk_name);
 int mount_fs(char *disk_name);
 int unmount_fs(char *disk_name);
+int fs_open(char *name);
+int fs_write(int fildes, void *buf, size_t nbyte);
 
 int block_write(int block, char *buf);
                                // write a block of size BLOCK_SIZE to disk    
