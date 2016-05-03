@@ -360,6 +360,18 @@ int fs_write(int fildes, void *buf, size_t nbyte)
 }
 
 
+//fs_close should work
+int fs_close(int fildes){
+	if((master->descriptors[fildes]->pointer == NULL)||(fildes >= 32)){
+		errno= 2;
+		perror("No such file is open \n");
+		return -1;
+	}
+	else
+		master->descriptors[fildes]->pointer = NULL;
+		master->descriptors[fildes]->seek = 0;
+		return 0;	
+}
 
 
 
