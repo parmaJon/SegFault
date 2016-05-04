@@ -7,6 +7,8 @@
 
 #include "disk.h"
 
+//#define DEBUG
+
 /******************************************************************************/
 static int active = 0;  /* is the virtual disk open (active) */
 static int handle;      /* file handle to virtual disk       */
@@ -56,7 +58,6 @@ int mount_fs(char *disk_name)
 	//super block
 	super = malloc(BLOCK_SIZE);
 	block_read(0,(char *)super);
-	printf("%i\n",super->data);
 	
 	//master control block
 	master = calloc(1,BLOCK_SIZE);
@@ -146,6 +147,7 @@ int mount_fs(char *disk_name)
 
 int unmount_fs(char *disk_name)
 {
+	printf("\nUnmounting file system...\n");
 	int k,j,bsize,dataOffset=0;
 
 	//master control block
@@ -172,11 +174,13 @@ int unmount_fs(char *disk_name)
 	block_write(super->dir,(char *)master->dir);
 	Directory dir = master->dir;
 
-
-
+#ifdef DEBUG
+	printf("unmounting inodes...\n");
+#endif
 	//inodes
 	for(i = 0; i<64; i++)
 	{
+		//printf("unmounting inode %d\n",i);
 		block_write(super->inodes + (i*10),(char *)dir->inodes[i]);
 		block_write(super->inodes + 1 + (i*10),(char *)dir->inodes[i]->data);
 
@@ -249,6 +253,8 @@ int unmount_fs(char *disk_name)
 
 	active=0;
 
+	printf("...unmount complete!\n");
+
 	return 0;
 }	
 
@@ -300,36 +306,44 @@ int fs_create(char *name){
 
 	if( len < 1 ) {
 		errno = EINVAL;
+		perror("fs_create");
 		return -1;
 	}
 
 	if( len > 15 ) {
 		errno = ENAMETOOLONG;
+		perror("fs_create");
 		return -1;
 	}
 
 	if( dir->inodes[63]->name[0] != '\0' ) {
 		errno = ENOMEM;
+		perror("fs_create");
 		return -1;
 	}
 
 	//binary search until proper position is found
 	while(low != i) {
 		if(strcmp(name,dir->inodes[i]->name) < 0) {
-			high = i;
+			low = i;
 		}
 		else if (strcmp(name,dir->inodes[i]->name) > 0) {
-			if (dir->inodes[i]->name[0] == '\0')
-				high = i;
-			else
-				low = i;
+			high = i;
 		}
 		else {
 			errno = EEXIST;
+			perror("fs_create");
 			return -1; //file already exists
 		}
 
 		i = low + (high-low)/2;
+	}
+
+	//if an exact match, notify that file exists
+	if( strcmp(name,dir->inodes[i]->name) == 0 ) {
+		errno = EEXIST;
+		perror("fs_create");
+		return -1; //file already exists
 	}
 	
 	//special case for adding file to the end of the list
@@ -366,13 +380,10 @@ int fs_delete(char *name){
 	//binary search until proper position is found
 	while(low != i) {
 		if(strcmp(name,dir->inodes[i]->name) < 0) {
-			high = i;
+			low = i;
 		}
 		else if (strcmp(name,dir->inodes[i]->name) > 0) {
-			if (dir->inodes[i]->name[0] == '\0')
-				high = i;
-			else
-				low = i;
+			high = i;
 		}
 
 		i = low + (high-low)/2;
@@ -381,13 +392,14 @@ int fs_delete(char *name){
 	//check that the file was found
 	if( strcmp(name,dir->inodes[i]->name) ) {
 		errno = ENOENT;
+		perror("fs_delete");
 		return -1;
 	}
 
 	INode file = dir->inodes[i];
 
 	//shift all inodes to the left
-	for(; i < 62; i++) {
+	for(; i < 63; i++) {
 		dir->inodes[i] = dir->inodes[i+1];
 	}
 
@@ -425,7 +437,6 @@ int fs_delete(char *name){
 	int tfreed = freed;
 
 	void* block = NULL;
-	void* fblocks = calloc(freed,BLOCK_SIZE);
 
 	//insert approapriate number of free blocks into structure
 	for( i = 0; i < 8  &&  freed > 0; i++ ) {
@@ -434,7 +445,8 @@ int fs_delete(char *name){
 				block = master->free->pointers[i]->pointers[j];
 
 				if( block == NULL ) {
-					master->free->pointers[i]->pointers[j] = fblocks + (tfreed - freed)*BLOCK_SIZE;
+					void* fblock = calloc(1,BLOCK_SIZE);
+					master->free->pointers[i]->pointers[j] = fblock;
 					freed--;
 				}
 			}
@@ -558,23 +570,47 @@ int fs_get_filesize(char *name){
 	//binary search until proper position is found
 	for( i=31; low != i; i=low+(high-low)/2 ) {
 		if(strcmp(name,dir->inodes[i]->name) < 0) {
-			high = i;
+			low = i;
 		}
 		else if (strcmp(name,dir->inodes[i]->name) > 0) {
-			if (dir->inodes[i]->name[0] == '\0')
-				high = i;
-			else
-				low = i;
+			high = i;
+		}
+		else {
+			high=i+1;
+			low=i;
 		}
 	}
 
 	//check that the file was found
 	if( strcmp(name,dir->inodes[i]->name) ) {
 		errno = ENOENT;
+		perror("fs_get_filesize");
 		return -1;
 	}
 
 	return dir->inodes[i]->size;
+}
+
+/**
+ * Utility function intended to list the names of all files
+ * @return 0 on success and -1 on error
+ */
+int fs_list_files() {
+	Directory dir = master->dir;
+	printf("\nListing directory contents...\n");
+	
+	int i;
+	for(i=0; i<64; i++){
+		if(dir->inodes[i]->name[0] != '\0')
+			printf("%s\n",dir->inodes[i]->name);
+#ifdef DEBUG
+		else
+			printf("empty\n");
+#endif
+	}
+
+	printf("...end of directory content.\n\n");
+	return 0;
 }
 
 
