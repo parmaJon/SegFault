@@ -79,11 +79,17 @@ int mount_fs(char *disk_name)
 	//files
 	for(i = 0; i<64; i++)
 	{
-    dir->inodes[i] = malloc(sizeof(struct iNode));
+		dir->inodes[i] = malloc(sizeof(struct iNode));
 		block_read(super->inodes + (i*10),(char *)dir->inodes[i]);
 		dir->inodes[i]->data = malloc(sizeof(struct indexBlock));
 		block_read(super->inodes + 1 + (i*10),(char *)dir->inodes[i]->data);
 		INode inode = dir->inodes[i]; //convenience var
+
+		bsize = (inode->size/BLOCK_SIZE)+1;
+
+
+		if( dir->inodes[i]->size % BLOCK_SIZE  ==  0 )
+			bsize--;
 		
 		//inodes (layer 2)
 		for(k = 0; k<8; k++) {
@@ -92,15 +98,18 @@ int mount_fs(char *disk_name)
 			IndexBlockLayer2 ib = dir->inodes[i]->data->pointers[k]; //convenience var
 			
 			//file content
-      j=0;
-			bsize = (inode->size/BLOCK_SIZE)+1;
-      if( dir->inodes[i]->size % BLOCK_SIZE  ==  0 )
-        bsize--;
+			j=0;
+
 			while( j < bsize ) {
+				if( j > 511 ) {
+					bsize = bsize - j;
+					break;
+				}
+
 				ib->pointers[j] = malloc(BLOCK_SIZE);
 				block_read(super->data + dataOffset,(char *)ib->pointers[j]);
 				j++;
-        dataOffset++;
+				dataOffset++;
 			}
 		} 
 	}
@@ -165,6 +174,11 @@ int unmount_fs(char *disk_name)
 	{
 		block_write(super->inodes + (i*10),(char *)dir->inodes[i]);
 		block_write(super->inodes + 1 + (i*10),(char *)dir->inodes[i]->data);
+
+		bsize = (dir->inodes[i]->size/BLOCK_SIZE)+1;
+
+		if( dir->inodes[i]->size % BLOCK_SIZE  ==  0 )
+			bsize--;
 		
 		//inodes (layer 2)
 		for(k = 0; k<8; k++) {
@@ -172,15 +186,18 @@ int unmount_fs(char *disk_name)
 			IndexBlockLayer2 ib = dir->inodes[i]->data->pointers[k]; //convenience var
 			
 			//file content
-      j=0;
-			bsize = (dir->inodes[i]->size/BLOCK_SIZE)+1;
-      if( dir->inodes[i]->size % BLOCK_SIZE  ==  0 )
-        bsize--;
+			j=0;
+
 			while( j < bsize ) {
+				if( j > 511 ) {
+					bsize = bsize - j;
+					break;
+				}
+
 				block_write(super->data + dataOffset,(char *)ib->pointers[j]);
 				free(ib->pointers[j]);
-        j++;
-        dataOffset++;
+				j++;
+				dataOffset++;
 			}
 
 			free(dir->inodes[i]->data->pointers[k]);
@@ -190,23 +207,23 @@ int unmount_fs(char *disk_name)
 		free(dir->inodes[i]);
 	}
 	
-  if( super->free != super->data + dataOffset){
-    errno = 5;
-    perror("unmount:Data size is inconsistent with offset value!");
-  }
+	if( super->free != super->data + dataOffset){
+		errno = 5;
+		perror("unmount:Data size is inconsistent with offset value!");
+	}
 	
 	free(master->dir);
 
-  k=0;
+	k=0;
 	//free layer 2 free index blocks
 	for(i = 0; i<8; i++)
 	{
 
 		j = 0;
 		while( k < BLOCK_SIZE - dataOffset  &&  j < (BLOCK_SIZE/8) ) {
-      void* buf = calloc(1,BLOCK_SIZE);
+			void* buf = calloc(1,BLOCK_SIZE);
 			free(freeb->pointers[i]->pointers[j]);
-      block_write(super->free + k, (char *) buf);
+			block_write(super->free + k, (char *) buf);
 			k++;
 			j++;
 		}
@@ -236,8 +253,7 @@ int fs_open(char *name)
 	//while we havent checked all files and names do not match
 	while(i < 64 && test == 0) 
 	{	
-		//TODO test for NULL file
-		if(master->dir->inodes[i]->name)
+		if(master->dir->inodes[i]->name[0] == '\0')
 			i++;//skip this "file"
 		else
 		{
@@ -266,6 +282,158 @@ int fs_open(char *name)
 	master->descriptors[j]->pointer = master->dir->inodes[i];
 	master->descriptors[j]->seek = 0;
 	return j; //returns the fd number
+}
+
+int fs_create(char *name){
+	Directory dir = master->dir;
+	int i = 31, low = 0, high = 64; //note, i can never reach high
+	int len = strlen(name);
+
+	if( len < 1 ) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	if( len > 15 ) {
+		errno = ENAMETOOLONG;
+		return -1;
+	}
+
+	if( dir->inodes[63]->name[0] != '\0' ) {
+		errno = ENOMEM;
+		return -1;
+	}
+
+	//binary search until proper position is found
+	while(low != i) {
+		if(strcmp(name,dir->inodes[i]->name) < 0) {
+			high = i;
+		}
+		else if (strcmp(name,dir->inodes[i]->name) > 0) {
+			if (dir->inodes[i]->name[0] == '\0')
+				high = i;
+			else
+				low = i;
+		}
+		else {
+			errno = EEXIST;
+			return -1; //file already exists
+		}
+
+		i = low + (high-low)/2;
+	}
+	
+	//special case for adding file to the end of the list
+	if( dir->inodes[i]->name[0] == '\0' )
+		i--;
+	
+	INode tmp = dir->inodes[i+1];
+	INode loc = dir->inodes[63];
+
+	strncpy(loc->name,name,len+1);
+	loc->size = 0;
+	sem_init(&(loc->write),0,1);
+	sem_init(&(loc->read),0,0);
+
+	dir->inodes[i+1] = loc;
+
+	i++;
+
+	//shift all inodes to the right
+	for(; i < 63; i++) {
+		loc = dir->inodes[i+1];
+		dir->inodes[i+1] = tmp;
+		tmp = loc;
+	}
+	
+
+	return 0;
+}
+
+int fs_delete(char *name){
+	Directory dir = master->dir;
+	int i = 31, low = 0, high = 64; //note, i can never reach high
+
+	//binary search until proper position is found
+	while(low != i) {
+		if(strcmp(name,dir->inodes[i]->name) < 0) {
+			high = i;
+		}
+		else if (strcmp(name,dir->inodes[i]->name) > 0) {
+			if (dir->inodes[i]->name[0] == '\0')
+				high = i;
+			else
+				low = i;
+		}
+
+		i = low + (high-low)/2;
+	}
+
+	//check that the file was found
+	if( strcmp(name,dir->inodes[i]->name) ) {
+		errno = ENOENT;
+		return -1;
+	}
+
+	INode file = dir->inodes[i];
+
+	//shift all inodes to the left
+	for(; i < 62; i++) {
+		dir->inodes[i] = dir->inodes[i+1];
+	}
+
+	//TODO: check semaphores for reading/writing?
+
+	int freed = 0;
+	int bsize = (file->size/BLOCK_SIZE)+1;
+	int k,j;
+
+	if( file->size % BLOCK_SIZE  ==  0 )
+		bsize--;
+	
+	//free file content
+	for(k = 0; k<8; k++) {
+		IndexBlockLayer2 ib = file->data->pointers[k]; //convenience var
+		
+		//file content
+		j=0;
+		while( j < bsize ) {
+			if( j > 511 ) {
+				bsize = bsize - j;
+				break;
+			}
+			free(ib->pointers[j]);
+			ib->pointers[j] = NULL;
+			j++;
+			freed++;
+		}
+	}
+
+	//reset inode and append to list
+	file->size = 0;
+	file->name[0] = '\0';
+	dir->inodes[63] = file;
+	int tfreed = freed;
+
+	void* block = NULL;
+	void* fblocks = calloc(freed,BLOCK_SIZE);
+
+	//insert approapriate number of free blocks into structure
+	for( i = 0; i < 8  &&  freed > 0; i++ ) {
+			for( j = 0; j < 512  &&  freed > 0; j++ ) {
+
+				block = master->free->pointers[i]->pointers[j];
+
+				if( block == NULL ) {
+					master->free->pointers[i]->pointers[j] = fblocks + (tfreed - freed)*BLOCK_SIZE;
+					freed--;
+				}
+			}
+	}
+
+	super->free = super->free - tfreed;
+
+	return 0;
 }
 
 int fs_write(int fildes, void *buf, size_t nbyte)
@@ -374,7 +542,31 @@ int fs_close(int fildes){
 }
 
 
+int fs_get_filesize(char *name){
+	Directory dir = master->dir;
+	int i, low = 0, high = 64; //note, i can never reach high
 
+	//binary search until proper position is found
+	for( i=31; low != i; i=low+(high-low)/2 ) {
+		if(strcmp(name,dir->inodes[i]->name) < 0) {
+			high = i;
+		}
+		else if (strcmp(name,dir->inodes[i]->name) > 0) {
+			if (dir->inodes[i]->name[0] == '\0')
+				high = i;
+			else
+				low = i;
+		}
+	}
+
+	//check that the file was found
+	if( strcmp(name,dir->inodes[i]->name) ) {
+		errno = ENOENT;
+		return -1;
+	}
+
+	return dir->inodes[i]->size;
+}
 
 
 

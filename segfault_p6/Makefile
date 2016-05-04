@@ -1,6 +1,6 @@
 CC = gcc
 CCOPTS = -c -g -Wall
-LINKOPTS = -g -lrt 
+LINKOPTS = -g -lrt -pthread
 
 EXEC=banana
 OBJECTS=disk.o main.o
