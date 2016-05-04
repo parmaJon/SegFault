@@ -7,7 +7,7 @@
 
 #include "disk.h"
 
-//#define DEBUG
+#define DEBUG
 
 /******************************************************************************/
 static int active = 0;  /* is the virtual disk open (active) */
@@ -19,6 +19,8 @@ static SuperBlock super;
 
 int make_fs(char *disk_name)
 {
+	printf("\nCreating file system on '%s'...\n",disk_name);
+
 	if(make_disk(disk_name) == -1)
 		return -1;
 		
@@ -38,12 +40,16 @@ int make_fs(char *disk_name)
 	
 	if( close_disk(disk_name) == -1 )
 		return -1;
-		
+	
+	printf("...disk '%s' has been created!\n",disk_name);
+	
 	return 0;
 }
 
 int mount_fs(char *disk_name)
 {
+	printf("\nMounting file system from '%s'...\n",disk_name);
+
 	if(active) {
 		errno = 1;
 		perror("A disk is already mounted!");
@@ -56,7 +62,7 @@ int mount_fs(char *disk_name)
 		return -1;
 	
 	//super block
-	super = malloc(BLOCK_SIZE);
+	super = calloc(1,BLOCK_SIZE);
 	block_read(0,(char *)super);
 	
 	//master control block
@@ -67,20 +73,20 @@ int mount_fs(char *disk_name)
 	int i;
 	for(i = 0; i<32; i++)
 	{
-		master->descriptors[i] = malloc(sizeof(struct fd));
+		master->descriptors[i] = calloc(1,BLOCK_SIZE);
 		master->descriptors[i]->seek = 0;
 		master->descriptors[i]->pointer = NULL;
 	}
 	
 	//free index block
-	IndexBlock free = malloc(sizeof(struct indexBlock));
+	IndexBlock free = calloc(1,BLOCK_SIZE);
 	block_read(super->free1,(char *)free);
 	master->free = free;
 
 	//top directory
 	master->dir = calloc(1,BLOCK_SIZE);
 	block_read(super->dir,(char *)master->dir);
-  Directory dir = master->dir;
+  	Directory dir = master->dir;
 	
 	//files
 	for(i = 0; i<64; i++)
@@ -106,9 +112,8 @@ int mount_fs(char *disk_name)
 			//file content
 			j=0;
 
-			while( j < bsize ) {
+			while( 0 < bsize ) {
 				if( j > 511 ) {
-					bsize = bsize - j;
 					break;
 				}
 
@@ -116,38 +121,47 @@ int mount_fs(char *disk_name)
 				block_read(super->data + dataOffset,(char *)ib->pointers[j]);
 				j++;
 				dataOffset++;
+				bsize--;
 			}
 		} 
 	}
 
-  if( super->free != super->data + dataOffset) {
-    errno = 5;
-    perror("Read free offset inconsistent with data size!");
-  }
+	if( super->free != super->data + dataOffset) {
+		errno = 5;
+		fprintf(stderr,"Read free offset inconsistent with data size!  Offset = %d, Data = %d : ",super->free-super->data, dataOffset);
+		perror("");
+	}
 
 	k = 0;
 		
 	//free index blocks (layer 2)
 	for(i = 0; i<8; i++)
 	{
-		free->pointers[i] = malloc(sizeof(struct indexBlockLayer2));
+		free->pointers[i] = calloc(1,BLOCK_SIZE);
 		block_read(super->free2 + i,(char *)free->pointers[i]);
 		
 		j = 0;
 		while( k < BLOCK_SIZE  &&  j < (BLOCK_SIZE/8) ) {
-			free->pointers[i]->pointers[k%(BLOCK_SIZE/8)] = malloc(BLOCK_SIZE);
+			free->pointers[i]->pointers[k%(BLOCK_SIZE/8)] = calloc(1,BLOCK_SIZE);
 			k++;
 			j++;
 		}
 	}
 	
+	printf("...disk '%s' has been mounted!\n",disk_name);
 	
 	return 0;
 }
 
 int unmount_fs(char *disk_name)
 {
-	printf("\nUnmounting file system...\n");
+	if(!active) {
+		errno=1;
+		perror("unmount_fs : no file system is mounted");
+		return -1;
+	}
+
+	printf("\nUnmounting file system to disk '%s'...\n", disk_name);
 	int k,j,bsize,dataOffset=0;
 
 	//master control block
@@ -197,16 +211,20 @@ int unmount_fs(char *disk_name)
 			//file content
 			j=0;
 
-			while( j < bsize ) {
+			while( 0 < bsize ) {
 				if( j > 511 ) {
-					bsize = bsize - j;
 					break;
 				}
+				
+#ifdef DEBUG
+				printf("unmounting data of file '%s' at index (%d,%d)\n", dir->inodes[i]->name, k, j);
+#endif
 
 				block_write(super->data + dataOffset,(char *)ib->pointers[j]);
 				free(ib->pointers[j]);
 				j++;
 				dataOffset++;
+				bsize--;
 			}
 
 			free(dir->inodes[i]->data->pointers[k]);
@@ -218,7 +236,8 @@ int unmount_fs(char *disk_name)
 	
 	if( super->free != super->data + dataOffset){
 		errno = 5;
-		perror("unmount:Data size is inconsistent with offset value!");
+		fprintf(stderr,"unmount : data size inconsistent with offset value : Offset = %d, Data = %d : ",super->free-super->data, dataOffset);
+		perror("");
 	}
 	
 	free(master->dir);
@@ -280,8 +299,10 @@ int fs_open(char *name)
 	}
 	
 	if(test == 0)
+	{
+		printf("couldnt find file at open \n");
 		return -1;
-	
+	}
 	//otherwise we found file
 	//find a descriptor
 	int j = 0;
@@ -292,8 +313,10 @@ int fs_open(char *name)
 	}
 	
 	if(j == 32)	//no descriptor found check
+	{
+		printf("no available descriptors\n");
 		return -1;
-		
+	}	
 	master->descriptors[j]->pointer = master->dir->inodes[i];
 	master->descriptors[j]->seek = 0;
 	return j; //returns the fd number
@@ -306,19 +329,22 @@ int fs_create(char *name){
 
 	if( len < 1 ) {
 		errno = EINVAL;
-		perror("fs_create");
+		fprintf(stderr, "fs_create : could not create '%s' : ", name);
+		perror("");
 		return -1;
 	}
 
 	if( len > 15 ) {
 		errno = ENAMETOOLONG;
-		perror("fs_create");
+		fprintf(stderr, "fs_create : could not create '%s' : ", name);
+		perror("");
 		return -1;
 	}
 
 	if( dir->inodes[63]->name[0] != '\0' ) {
 		errno = ENOMEM;
-		perror("fs_create");
+		fprintf(stderr, "fs_create : could not create '%s' : ", name);
+		perror("");
 		return -1;
 	}
 
@@ -332,7 +358,8 @@ int fs_create(char *name){
 		}
 		else {
 			errno = EEXIST;
-			perror("fs_create");
+			fprintf(stderr, "fs_create : could not create '%s' : ", name);
+			perror("");
 			return -1; //file already exists
 		}
 
@@ -342,7 +369,8 @@ int fs_create(char *name){
 	//if an exact match, notify that file exists
 	if( strcmp(name,dir->inodes[i]->name) == 0 ) {
 		errno = EEXIST;
-		perror("fs_create");
+		fprintf(stderr, "fs_create : could not create '%s' : ", name);
+		perror("");
 		return -1; //file already exists
 	}
 	
@@ -412,21 +440,22 @@ int fs_delete(char *name){
 	if( file->size % BLOCK_SIZE  ==  0 )
 		bsize--;
 	
+	
 	//free file content
 	for(k = 0; k<8; k++) {
 		IndexBlockLayer2 ib = file->data->pointers[k]; //convenience var
 		
 		//file content
 		j=0;
-		while( j < bsize ) {
+		while( 0 < bsize ) {
 			if( j > 511 ) {
-				bsize = bsize - j;
 				break;
 			}
 			free(ib->pointers[j]);
 			ib->pointers[j] = NULL;
 			j++;
 			freed++;
+			bsize--;
 		}
 	}
 
@@ -467,20 +496,68 @@ int fs_write(int fildes, void *buf, size_t nbyte)
 	int offset = master->descriptors[fildes]->seek;
 	
 	char buffer[sizeof(buf)];
-	strcpy(buffer, buf);
+	strncpy(buffer, (char *) buf, nbyte);
 	
-	//begin writing
+	int written = 0;
+	int bused = 0;
 	int i = 0;
-	int j = 4096;
 	int freex = 8, freey = 512;
 	int usex = 0, usey = 0;
 	
+	int test = 1;
+
+	while(1)	//locate first free block
+	{
+		if(master->free->pointers[freex-1]->pointers[freey-1] == NULL) //not pointing to a block
+		{
+			freey--;
+			if(freey == 0)
+			{
+				freey = 512;
+				freex--;
+				if(freex == 0)
+				{
+					test = 0;
+					break; //break the while loop
+				}
+			}
+
+		}
+		else
+			break;
+	}
+	
+	
+	
 	//find the position of the fd (in the blocks)
 	int dec = offset;
-	while(dec > 0)
+	while(dec >= 0)
 	{
+		if( file->data->pointers[usex]->pointers[usey] == NULL) {
+			if(freex == 0)
+			{
+				written = offset - master->descriptors[fildes]->seek;
+				master->descriptors[fildes]->seek = offset;
+				
+				return written;
+			}
+			else //a free block is available
+			{
+				file->data->pointers[usex]->pointers[usey] = master->free->pointers[freex-1]->pointers[freey-1];
+				master->free->pointers[freex-1]->pointers[freey-1] = NULL;
+				bused++;
+				
+				freey--;
+				if(freey == 0)
+				{
+					freey = 512;
+					freex--;
+				}
+			}
+		}
+	
 		dec = dec - 4096;
-		if(dec > 0)
+		if(dec >= 0)
 		{
 			usey++;
 			if(usey == 512)
@@ -493,58 +570,64 @@ int fs_write(int fildes, void *buf, size_t nbyte)
 		}
 	} 
 
-	int test = 1;
 	while(i < nbyte && test != 0)
 	{
 		//check if need new block
-		if(offset%4096 == 0)
+		if(offset%4096 == 0 && offset > file->size)
 		{
-			while(j > 0)	//check if new block is available
+			if(freex == 0)
 			{
-				if(master->free->pointers[freex-1]->pointers[freey-1] == NULL) //not pointing to a block
+				written = offset - master->descriptors[fildes]->seek;
+				master->descriptors[fildes]->seek = offset;
+				
+				return written;
+			}
+			else //a free block is available
+			{
+				usey++; //incrament block location
+				if(usey == 512)	//if we hit the end of this section
 				{
-					freey--;
-					if(freey == 0)
+					usey = 0;	
+					usex++;		
+					if(usex == 8)	//if we are out of space
 					{
-						freey = 512;
-						freex--;
-						if(freex == 0)
-						{
-							test = 0;
-							break; //break the while loop
-						}
+						test = 0;
+						break; //break the while loop
 					}
 				}
-				else //found a block that is available
+				file->data->pointers[usex]->pointers[usey] = master->free->pointers[freex-1]->pointers[freey-1];
+				master->free->pointers[freex-1]->pointers[freey-1] = NULL;
+				bused++;
+				
+				freey--;
+				if(freey == 0)
 				{
-					usey++; //incrament block location
-					if(usey == 512)	//if we hit the end of this section
-					{
-						usey = 0;	
-						usex++;		
-						if(usex == 8)	//if we are out of space
-						{
-							test = 0;
-							break; //break the while loop
-						}
-					}
+					freey = 512;
+					freex--;
 				}
 			}
+			
 			
 		}
 		//TODO check that im writing correctly
 		if(test != 0)
 		{
-			//strcpy((file->data->pointers[usex]->pointers[usey] + (offset%4096)), buffer[i]);
 			//copy single char to file->data->pointers[usex]->pointer[usey] + (offset%4096)
+			printf("im writing at address: %d, with usex %d, and usey %d \n", offset%4096, usex, usey);
+			strncpy((file->data->pointers[usex]->pointers[usey] + (offset%4096)), &buffer[i],1);
 			offset++;
 			i++;
 		}	
 	}	
 		
 	//cleanup
-	int written = offset - master->descriptors[fildes]->seek;
+	written = offset - master->descriptors[fildes]->seek;
 	master->descriptors[fildes]->seek = offset;
+	if(offset > file->size) {
+		super->free += bused;
+		file->size = offset;
+	}
+
 	return written;
 }
 

@@ -63,6 +63,7 @@ int fs_get_filesize(char* name);
 int fs_create(char *name);
 int fs_delete(char *name);
 int fs_list_files();
+int fs_close(int fd);
 
 int block_write(int block, char *buf);
                                // write a block of size BLOCK_SIZE to disk    

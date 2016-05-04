@@ -27,11 +27,15 @@ int main(int argc, char *argv[]) {
 
 	fs_create("myfile.txt");
 	fs_list_files();
-	fs_create("myfile.txt");
 	fs_create("junk.txt");
 	fs_list_files();
+
+	int fd = fs_open("myfile.txt");
+	char *buf = "t";
+	fs_write(fd,buf,2);
+	fs_close(fd);
+
 	printf("size - %d\n", fs_get_filesize("myfile.txt"));
-	fs_create("myfile.txt");
 
 	unmount_fs("test");
 
@@ -41,6 +45,7 @@ int main(int argc, char *argv[]) {
 	printf("size - %d\n", fs_get_filesize("myfile.txt"));
 	printf("size - %d\n", fs_get_filesize("junk.txt"));
 	fs_delete("myfile.txt");
+	fs_list_files();
 
 	unmount_fs("test");
 	
