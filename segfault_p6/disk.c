@@ -7,7 +7,7 @@
 
 #include "disk.h"
 
-#define DEBUG
+//#define DEBUG
 
 /******************************************************************************/
 static int active = 0;  /* is the virtual disk open (active) */
@@ -319,6 +319,8 @@ int fs_open(char *name)
 	}	
 	master->descriptors[j]->pointer = master->dir->inodes[i];
 	master->descriptors[j]->seek = 0;
+	
+	
 	return j; //returns the fd number
 }
 
@@ -385,6 +387,7 @@ int fs_create(char *name){
 	loc->size = 0;
 	sem_init(&(loc->write),0,1);
 	sem_init(&(loc->read),0,0);
+	
 
 	dir->inodes[i+1] = loc;
 
@@ -490,12 +493,13 @@ int fs_write(int fildes, void *buf, size_t nbyte)
 {
 	if(master->descriptors[fildes]->pointer == NULL)
 		return -1; //invalid descriptor
+	
 		
 	//find our file
 	INode file = master->descriptors[fildes]->pointer;
 	int offset = master->descriptors[fildes]->seek;
 	
-	char buffer[sizeof(buf)];
+	char buffer[nbyte];
 	strncpy(buffer, (char *) buf, nbyte);
 	
 	int written = 0;
@@ -613,7 +617,9 @@ int fs_write(int fildes, void *buf, size_t nbyte)
 		if(test != 0)
 		{
 			//copy single char to file->data->pointers[usex]->pointer[usey] + (offset%4096)
+#ifdef DEBUG
 			printf("im writing at address: %d, with usex %d, and usey %d \n", offset%4096, usex, usey);
+#endif
 			strncpy((file->data->pointers[usex]->pointers[usey] + (offset%4096)), &buffer[i],1);
 			offset++;
 			i++;
@@ -646,45 +652,54 @@ int fs_close(int fildes){
 }
 
 int fs_read(int fildes, void *buf, size_t nbyte){
-	if(master->despcriptors[fildes]->pointer == NULL || fildes > 31){
+	if(master->descriptors[fildes]->pointer == NULL || fildes > 31){
 		errno = 2;
 		perror("No Such file open\n");
 	}
 
-	int numbytes = atoi(nbyte);
+	int numbytes = nbyte;
+	
 	INode file = master->descriptors[fildes]->pointer;
 	int offset = master->descriptors[fildes]->seek;
+	
+	if(offset > file->size)
+		return 0;
+	
 	if(numbytes > file->size - offset)
-		numbytes = file->size - offset; 
+		numbytes = file->size - offset;
+		
+	int read = numbytes; 
 
 	//copy data nbytes from seek to seek+nbytes to buf
 	char buffer[numbytes];
-	int i= 0;
-	int outeroffset = offset/512;
-	int inneroffset = offset%512;
+	int i = offset%BLOCK_SIZE;
+	int outeroffset = offset/(512*BLOCK_SIZE);
+	int inneroffset = (offset/BLOCK_SIZE)%512;
 	
-	while(i < numbytes){
+	while(0 < numbytes){
+		//check for new block
+		if(i >= BLOCK_SIZE){ 
+			i = 0;
+		}
 	
-	//check for new block in outeroffset
-	  if(inneroffset > 512){ 
-		outeroffset += 1;
-		inneroffset = 0;
-	  }
+		//check for new block in outeroffset
+		if(inneroffset > 512){ 
+			outeroffset += 1;
+			inneroffset = 0;
+		}
 
-	//copy each 4byte section to the buffer
-	strcpy(buffer[i], file->data->pointers[outeroffset]->pointers[inneroffset]);
-
-
-	inneroffset += 1;
-	i++;
+		//copy each byte into the buffer
+		strncpy(&buffer[i], file->data->pointers[outeroffset]->pointers[inneroffset] + i, 1);
+		numbytes--;
+		i++;
 	}
 
-	strcpy(buf, buffer);
+	strncpy(buf, buffer, read);
 
 	//cleanup
-	master->descriptors[fildes]->seek += numbytes; //increment seek by nbytes
+	master->descriptors[fildes]->seek += read; //increment seek by nbytes
 
-	return numbytes;
+	return read;
 
 }
 
