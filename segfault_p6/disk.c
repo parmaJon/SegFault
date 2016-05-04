@@ -23,7 +23,7 @@ int make_fs(char *disk_name)
 	if(open_disk(disk_name) == -1)
 		return -1;
 	
-	SuperBlock sup = malloc(sizeof(struct superBlock));
+	SuperBlock sup = calloc(1,BLOCK_SIZE);
 	sup->master = 1;
 	sup->free1 = 2;
 	sup->free2 = 3;
@@ -42,6 +42,11 @@ int make_fs(char *disk_name)
 
 int mount_fs(char *disk_name)
 {
+	if(active) {
+		errno = 1;
+		perror("A disk is already mounted!");
+	}
+
 	int k,j=0,bsize,dataOffset=0;
 	
 
@@ -49,12 +54,12 @@ int mount_fs(char *disk_name)
 		return -1;
 	
 	//super block
-	super = malloc(sizeof(struct superBlock));
+	super = malloc(BLOCK_SIZE);
 	block_read(0,(char *)super);
 	printf("%i\n",super->data);
 	
 	//master control block
-	master = malloc(sizeof(struct masterControlBlock));
+	master = calloc(1,BLOCK_SIZE);
 	block_read(super->master,(char *)master);
 
 	//file descriptors
@@ -72,16 +77,16 @@ int mount_fs(char *disk_name)
 	master->free = free;
 
 	//top directory
-	master->dir = malloc(sizeof(struct directory));
+	master->dir = calloc(1,BLOCK_SIZE);
 	block_read(super->dir,(char *)master->dir);
   Directory dir = master->dir;
 	
 	//files
 	for(i = 0; i<64; i++)
 	{
-		dir->inodes[i] = malloc(sizeof(struct iNode));
+		dir->inodes[i] = calloc(1,BLOCK_SIZE);
 		block_read(super->inodes + (i*10),(char *)dir->inodes[i]);
-		dir->inodes[i]->data = malloc(sizeof(struct indexBlock));
+		dir->inodes[i]->data = calloc(1,BLOCK_SIZE);
 		block_read(super->inodes + 1 + (i*10),(char *)dir->inodes[i]->data);
 		INode inode = dir->inodes[i]; //convenience var
 
@@ -93,7 +98,7 @@ int mount_fs(char *disk_name)
 		
 		//inodes (layer 2)
 		for(k = 0; k<8; k++) {
-			dir->inodes[i]->data->pointers[k] = malloc(sizeof(struct indexBlockLayer2));
+			dir->inodes[i]->data->pointers[k] = calloc(1,BLOCK_SIZE);
 			block_read(super->inodes + 2 + k + (i*10),(char *)dir->inodes[i]->data->pointers[k]);
 			IndexBlockLayer2 ib = dir->inodes[i]->data->pointers[k]; //convenience var
 			
@@ -106,7 +111,7 @@ int mount_fs(char *disk_name)
 					break;
 				}
 
-				ib->pointers[j] = malloc(BLOCK_SIZE);
+				ib->pointers[j] = calloc(1,BLOCK_SIZE);
 				block_read(super->data + dataOffset,(char *)ib->pointers[j]);
 				j++;
 				dataOffset++;
@@ -220,13 +225,15 @@ int unmount_fs(char *disk_name)
 	{
 
 		j = 0;
+		void* buf = calloc(1,BLOCK_SIZE);
 		while( k < BLOCK_SIZE - dataOffset  &&  j < (BLOCK_SIZE/8) ) {
-			void* buf = calloc(1,BLOCK_SIZE);
 			free(freeb->pointers[i]->pointers[j]);
 			block_write(super->free + k, (char *) buf);
 			k++;
 			j++;
 		}
+
+		free(buf);
 
 		free(freeb->pointers[i]);
 	}
@@ -239,6 +246,8 @@ int unmount_fs(char *disk_name)
 
 	if( close_disk(disk_name) == -1 )
 		return -1;
+
+	active=0;
 
 	return 0;
 }	

@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
 	make_fs("test");
 	mount_fs("test");
 	unmount_fs("test");
-    
-    return 0;
-
+	
+	return 0;
+	
 }
