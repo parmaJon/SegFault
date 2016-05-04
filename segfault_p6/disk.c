@@ -549,7 +549,7 @@ int fs_write(int fildes, void *buf, size_t nbyte)
 }
 
 
-//fs_close should work
+//fs_close and fs_read -> need debugging
 int fs_close(int fildes){
 	if((master->descriptors[fildes]->pointer == NULL)||(fildes >= 32)){
 		errno= 2;
@@ -561,6 +561,53 @@ int fs_close(int fildes){
 		master->descriptors[fildes]->seek = 0;
 		return 0;	
 }
+
+int fs_read(int fildes, void *buf, size_t nbyte){
+	if(master->despcriptors[fildes]->pointer == NULL || fildes > 31){
+		errno = 2;
+		perror("No Such file open\n");
+	}
+
+	int numbytes = atoi(nbyte);
+	INode file = master->descriptors[fildes]->pointer;
+	int offset = master->descriptors[fildes]->seek;
+	if(numbytes > file->size - offset)
+		numbytes = file->size - offset; 
+
+	//copy data nbytes from seek to seek+nbytes to buf
+	char buffer[numbytes];
+	int i= 0;
+	int outeroffset = offset/512;
+	int inneroffset = offset%512;
+	
+	while(i < numbytes){
+	
+	//check for new block in outeroffset
+	  if(inneroffset > 512){ 
+		outeroffset += 1;
+		inneroffset = 0;
+	  }
+
+	//copy each 4byte section to the buffer
+	strcpy(buffer[i], file->data->pointers[outeroffset]->pointers[inneroffset]);
+
+
+	inneroffset += 1;
+	i++;
+	}
+
+	strcpy(buf, buffer);
+
+	//cleanup
+	master->descriptors[fildes]->seek += numbytes; //increment seek by nbytes
+
+	return numbytes;
+
+}
+
+
+
+
 
 
 int fs_get_filesize(char *name){
