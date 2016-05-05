@@ -59,6 +59,7 @@ int mount_fs(char *disk_name);
 int unmount_fs(char *disk_name);
 int fs_open(char *name);
 int fs_write(int fildes, void *buf, size_t nbyte);
+int fs_read(int fildes, void *buf, size_t nbyte);
 int fs_get_filesize(char* name);
 int fs_create(char *name);
 int fs_delete(char *name);
