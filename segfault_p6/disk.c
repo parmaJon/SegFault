@@ -795,6 +795,12 @@ int fs_truncate(int fildes, off_t length)
     
     filesize = master->descriptors[fildes]->pointer->size;
     
+    // if truncating past file descriptor location, move file descriptor
+    if(master->descriptors[fildes]->seek > length)
+    {
+        master->descriptors[fildes]->seek = length;
+    }
+    
     // if blocks are going to be freed
     if((a = (int)ceil((double)filesize / BLOCK_SIZE)) != (b = (int)ceil((double)length / BLOCK_SIZE)))
     {
@@ -815,6 +821,12 @@ int fs_truncate(int fildes, off_t length)
 		            // free content
     		        free(ib->pointers[j]);
 		            ib->pointers[j] = NULL;
+		        }
+		        
+		        for(j = length % BLOCK_SIZE; j < BLOCK_SIZE; j++) 
+		        {
+		            char *tmp = (ib->pointers[inneroffset2]) + j;
+		            *tmp = '\0';
 		        }
 		    }
 		    else
