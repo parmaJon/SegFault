@@ -64,6 +64,8 @@ int fs_create(char *name);
 int fs_delete(char *name);
 int fs_list_files();
 int fs_close(int fd);
+int fs_lseek(int fildes, off_t offset);
+int fs_truncate(int fildes, off_t length);
 
 int block_write(int block, char *buf);
                                // write a block of size BLOCK_SIZE to disk    

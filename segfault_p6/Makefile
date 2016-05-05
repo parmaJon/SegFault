@@ -8,7 +8,7 @@ OBJECTS=disk.o main.o
 all: $(EXEC)
 
 $(EXEC): $(OBJECTS)
-	$(CC) $(LINKOPTS) -o $@ $^
+	$(CC) $(LINKOPTS) -o $@ $^ -lm
 
 %.o:%.c
 	$(CC) $(CCOPTS) -o $@ $^

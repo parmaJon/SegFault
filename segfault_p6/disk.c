@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
+#include <math.h>
 
 #include "disk.h"
 
@@ -584,7 +585,7 @@ int fs_write(int fildes, void *buf, size_t nbyte)
 			}
 			else //a free block is available
 			{
-				usey++; //incrament block location
+				usey++; //increment block location
 				if(usey == 512)	//if we hit the end of this section
 				{
 					usey = 0;	
@@ -645,8 +646,9 @@ int fs_close(int fildes){
 		return 0;	
 }
 
-int fs_read(int fildes, void *buf, size_t nbyte){
-	if(master->despcriptors[fildes]->pointer == NULL || fildes > 31){
+int fs_read(int fildes, void *buf, size_t nbyte)
+{
+	if(master->descriptors[fildes]->pointer == NULL || fildes > 31){
 		errno = 2;
 		perror("No Such file open\n");
 	}
@@ -659,7 +661,7 @@ int fs_read(int fildes, void *buf, size_t nbyte){
 
 	//copy data nbytes from seek to seek+nbytes to buf
 	char buffer[numbytes];
-	int i= 0;
+	int i = 0;
 	int outeroffset = offset/512;
 	int inneroffset = offset%512;
 	
@@ -688,8 +690,152 @@ int fs_read(int fildes, void *buf, size_t nbyte){
 
 }
 
+/**
+ * Sets the file pointer to offset
+ * @param fildes file descriptor
+ * @param offset offset to which the file is being sought
+ * @return 0 if successful, -1 if not.
+ */
+int fs_lseek(int fildes, off_t offset)
+{
+    // Check if filedes is valid
+    if(fildes < 0 || fildes > 31)
+    {
+        perror("Invalid file descriptor for lseek\n");
+        return -1;
+    }
 
+    // Check if file is open
+    if(master->descriptors[fildes]->pointer == NULL)
+    {
+        perror("Cannot use lseek on closed file\n");
+        return -1;
+    }
+    
+    // Check if offset is negative
+    if(offset < 0)
+    {
+        perror("lseek offset cannot be negative\n");
+        return -1;
+    }
+    
+    // Check if offset is greater than file size
+    if(master->descriptors[fildes]->pointer->size < offset)
+    {
+        perror("lseek offset cannot be greater than file size\n");
+        return -1;
+    }
+    
+    master->descriptors[fildes]->seek = offset;
 
+    return 0;
+}
+
+/**
+ * Truncates a given file to length bytes
+ * @param fildes file descriptor of file to truncate
+ * @param length length to which file will be truncated
+ * @return 0 if successful, -1 if not.
+ */
+int fs_truncate(int fildes, off_t length)
+{
+    int filesize = 0;
+    int a = 0;
+    int b = 0;
+    int freed = 0;
+    int i,j;
+    int outeroffset1 = 0;
+	int inneroffset1 = 0;
+	int outeroffset2 = 0;
+	int inneroffset2 = 0;
+    
+    // Check if filedes is valid
+    if(fildes < 0 || fildes > 31)
+    {
+        perror("Invalid file descriptor for truncate\n");
+        return -1;
+    }
+
+    // Check if file is open
+    if(master->descriptors[fildes]->pointer == NULL)
+    {
+        perror("Cannot use truncate on closed file\n");
+        return -1;
+    }
+    
+    // Check if length is negative
+    if(length < 0)
+    {
+        perror("truncate length cannot be negative\n");
+        return -1;
+    }
+    
+    // Check if truncating larger than the file size
+    if(master->descriptors[fildes]->pointer->size < length)
+    {
+        perror("Cannot truncate to a length larger than file size\n");
+        return -1;
+    }
+    
+    filesize = master->descriptors[fildes]->pointer->size;
+    
+    // if blocks are going to be freed
+    if((a = (int)ceil((double)filesize / BLOCK_SIZE)) != (b = (int)ceil((double)length / BLOCK_SIZE)))
+    {
+        outeroffset1 = filesize / 512;
+        inneroffset1 = filesize % 512;
+        outeroffset2 = length / 512;
+	    inneroffset2 = length % 512;
+	    
+        //free file content
+	    for(i = outeroffset2; i <= outeroffset1; i++) {
+		    IndexBlockLayer2 ib = master->descriptors[fildes]->pointer->data->pointers[i]; //convenience var
+		    
+            // if at final inneroffset
+		    if(i == outeroffset1)
+		    {
+		        for(j = inneroffset2; j <= inneroffset1; j++, freed++)
+		        {
+		            // free content
+    		        free(ib->pointers[j]);
+		            ib->pointers[j] = NULL;
+		        }
+		    }
+		    else
+		    {
+		        for(j = 0; j < 512; j++, freed++)
+		        {
+		            free(ib->pointers[j]);
+		            ib->pointers[j] = NULL;
+		        }
+		    }
+	    }
+
+	    // update file size
+	    master->descriptors[fildes]->pointer->size = length;
+	    int tfreed = freed;
+
+	    void* block = NULL;
+
+	    //insert approapriate number of free blocks into structure
+	    for( i = 0; i < 8  &&  freed > 0; i++ ) {
+			    for( j = 0; j < 512  &&  freed > 0; j++ ) {
+
+				    block = master->free->pointers[i]->pointers[j];
+
+				    if( block == NULL ) {
+					    void* fblock = calloc(1,BLOCK_SIZE);
+					    master->free->pointers[i]->pointers[j] = fblock;
+					    freed--;
+				    }
+			    }
+	    }
+
+	    super->free = super->free - tfreed;
+    }
+    
+    return 0;
+}
 
 
 
