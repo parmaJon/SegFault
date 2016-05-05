@@ -826,29 +826,29 @@ int fs_truncate(int fildes, off_t length)
 		        }
 		    }
 	    }
-
-	    // update file size
-	    master->descriptors[fildes]->pointer->size = length;
-	    int tfreed = freed;
-
-	    void* block = NULL;
-
-	    //insert approapriate number of free blocks into structure
-	    for( i = 0; i < 8  &&  freed > 0; i++ ) {
-			    for( j = 0; j < 512  &&  freed > 0; j++ ) {
-
-				    block = master->free->pointers[i]->pointers[j];
-
-				    if( block == NULL ) {
-					    void* fblock = calloc(1,BLOCK_SIZE);
-					    master->free->pointers[i]->pointers[j] = fblock;
-					    freed--;
-				    }
-			    }
-	    }
-
-	    super->free = super->free - tfreed;
     }
+    
+    // update file size
+    master->descriptors[fildes]->pointer->size = length;
+    int tfreed = freed;
+
+    void* block = NULL;
+
+    //insert approapriate number of free blocks into structure
+    for( i = 0; i < 8  &&  freed > 0; i++ ) {
+		    for( j = 0; j < 512  &&  freed > 0; j++ ) {
+
+			    block = master->free->pointers[i]->pointers[j];
+
+			    if( block == NULL ) {
+				    void* fblock = calloc(1,BLOCK_SIZE);
+				    master->free->pointers[i]->pointers[j] = fblock;
+				    freed--;
+			    }
+		    }
+    }
+
+    super->free = super->free - tfreed;
     
     return 0;
 }
