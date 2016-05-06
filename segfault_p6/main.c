@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
 	fs_list_files();
 
 	int fd = fs_open("myfile.txt");
-	char *buf = "testing this shity fucking code";
+	char *buf = "testing this code";
 	fs_write(fd,buf,strlen(buf));
 	fs_lseek(fd,100);
 	buf = "it! Blahc lksjdfkj ihwtw lekjth lksajdf 123413459827 i sadfkjhq3oipu4tryheiq8u934yt5981 3yq4t97ughergo9vyq398 4y5t 98qgrebgfvkje";
@@ -41,23 +41,22 @@ int main(int argc, char *argv[]) {
 	fs_write(fd,"",1);
 	fs_close(fd);
 
-
 	fd = fs_open("myfile.txt");
 	char word[1000];
 	fs_read(fd,word,10000);
 	fs_close(fd);
 
-	printf("%s\n",word);
+	printf("\"%s\" was read from myfile.txt\n",word);
 
-	printf("size - %d\n", fs_get_filesize("myfile.txt"));
+	printf("size of myfile.txt - %d\n", fs_get_filesize("myfile.txt"));
 
 	unmount_fs("test");
 
 	mount_fs("test");
 
 	fs_list_files();
-	printf("size - %d\n", fs_get_filesize("myfile.txt"));
-	printf("size - %d\n", fs_get_filesize("junk.txt"));
+	printf("size of myfile.txt - %d\n", fs_get_filesize("myfile.txt"));
+	printf("size of junk.txt - %d\n", fs_get_filesize("junk.txt"));
 	fs_delete("myfile.txt");
 	fs_list_files();
 
