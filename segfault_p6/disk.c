@@ -327,7 +327,7 @@ int fs_open(char *name)
 
 int fs_create(char *name){
 	Directory dir = master->dir;
-	int i = 31, low = 0, high = 64; //note, i can never reach high
+	int i = 0; //note, i can never reach high
 	int len = strlen(name);
 
 	if( len < 1 ) {
@@ -352,21 +352,18 @@ int fs_create(char *name){
 	}
 
 	//binary search until proper position is found
-	while(low != i) {
-		if(strcmp(name,dir->inodes[i]->name) < 0) {
-			low = i;
-		}
-		else if (strcmp(name,dir->inodes[i]->name) > 0) {
-			high = i;
-		}
-		else {
+	while(i < 64) {
+		if (strcmp(name,dir->inodes[i]->name) == 0) {
 			errno = EEXIST;
 			fprintf(stderr, "fs_create : could not create '%s' : ", name);
 			perror("");
 			return -1; //file already exists
 		}
+		else if (strcmp(name,dir->inodes[i]->name) < 0  ||  dir->inodes[i]->name[0] == '\0') {
+			break;
+		}
 
-		i = low + (high-low)/2;
+		i++;
 	}
 
 	//if an exact match, notify that file exists
@@ -407,18 +404,21 @@ int fs_create(char *name){
 
 int fs_delete(char *name){
 	Directory dir = master->dir;
-	int i = 31, low = 0, high = 64; //note, i can never reach high
+	int i = 0; //note, i can never reach high
 
 	//binary search until proper position is found
-	while(low != i) {
-		if(strcmp(name,dir->inodes[i]->name) < 0) {
-			low = i;
+	while(i < 64) {
+		if (strcmp(name,dir->inodes[i]->name) == 0) {
+			break;
 		}
-		else if (strcmp(name,dir->inodes[i]->name) > 0) {
-			high = i;
+		else if (strcmp(name,dir->inodes[i]->name) < 0  ||  dir->inodes[i]->name[0] == '\0') {
+			errno = EEXIST;
+			fprintf(stderr, "fs_delete : could not locate '%s' : ", name);
+			perror("");
+			return -1; //file already exists
 		}
 
-		i = low + (high-low)/2;
+		i++;
 	}
 
 	//check that the file was found
